@@ -1,0 +1,48 @@
+parameters:
+    env(TRANSPORT_DSN): 'php://default'
+    env(ALLOW_ANONYMOUS): true
+    transport_dsn: '%env(TRANSPORT_DSN)%'
+    allow_anonymous: '%env(bool:ALLOW_ANONYMOUS)%'
+
+services:
+    _instanceof:
+        BenTools\MercurePHP\Hub\HubControllerInterface:
+            tags: ['mercure.controller']
+        BenTools\MercurePHP\Hub\Transport\TransportFactoryInterface:
+            tags: ['mercure.transport_factory']
+
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        bind:
+            iterable $controllers: !tagged_iterator mercure.controller
+
+
+    BenTools\MercurePHP\:
+        resource: '%kernel.project_dir%/src/'
+        exclude:
+            - '%kernel.project_dir%/src/Hub/Transport/Redis/RedisPublisher.php'
+            - '%kernel.project_dir%/src/Hub/Transport/Redis/RedisListener.php'
+            - '%kernel.project_dir%/src/Hub/Transport/Redis/RedisTransport.php'
+            - '%kernel.project_dir%/src/Kernel.php'
+            - '%kernel.project_dir%/src/functions.php'
+
+    BenTools\MercurePHP\Hub\Controller\SubscribeController:
+        arguments:
+            $options:
+                allow_anonymous: '%allow_anonymous%'
+
+    BenTools\MercurePHP\Security\JWT\Extractor\PSR7TokenExtractorInterface: '@BenTools\MercurePHP\Security\JWT\Extractor\ChainTokenExtractor'
+    BenTools\MercurePHP\Hub\Transport\TransportFactory:
+        arguments:
+            $factories: !tagged_iterator mercure.transport_factory
+
+    BenTools\MercurePHP\Hub\Transport\TransportInterface:
+        factory: ['@BenTools\MercurePHP\Hub\Transport\TransportFactory', 'create']
+        arguments: ['%transport_dsn%']
+
+    Evenement\EventEmitter: ~
+    Evenement\EventEmitterInterface: '@Evenement\EventEmitter'
+    Clue\React\Redis\Factory: ~
+
+

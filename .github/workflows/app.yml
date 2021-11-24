@@ -1,0 +1,71 @@
+name: Application
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  code-style:
+    name: Code Style & Static Analysis
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.1
+          extensions: mbstring, pcntl
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Check code style
+        run: composer linter:check
+
+      - name: Track avoidable bugs
+        run: composer phpstan:analyze
+
+  tests:
+    name: Test Suite
+    runs-on: ubuntu-20.04
+    services:
+      redis:
+        image: redis:6.0
+        ports:
+          - 6379:6379
+    strategy:
+      max-parallel: 10
+      matrix:
+        transport:
+          - "php://localhost?size=10000"
+          - "redis://localhost?size=10000&trimInterval=0.5"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.1
+          extensions: mbstring, pcntl, curl, zip
+          coverage: pcov
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run tests
+        env:
+          TRANSPORT_DSN: ${{ matrix.transport }}
+        run: vendor/bin/pest --coverage --coverage-clover=coverage.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
