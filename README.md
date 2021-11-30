@@ -18,7 +18,7 @@ See what features are covered and what aren't (yet) [here](#feature-coverage).
 PHP 8.1 is required to run the hub.
 
 ```bash
-composer create-project freddie/mercure-x:"O.1.*" freddie
+composer create-project freddie/mercure-x:"~0.1" freddie
 cd freddie
 ```
 
