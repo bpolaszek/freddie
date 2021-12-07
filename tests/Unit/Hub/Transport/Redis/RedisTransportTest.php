@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Hub\Transport\Redis;
+namespace Freddie\Tests\Unit\Hub\Transport\Redis;
 
-use BenTools\MercurePHP\Hub\Transport\Redis\RedisPublisher;
-use BenTools\MercurePHP\Hub\Transport\Redis\RedisSubscriber;
-use BenTools\MercurePHP\Hub\Transport\Redis\RedisTransport;
-use BenTools\MercurePHP\Message\Message;
-use BenTools\MercurePHP\Message\Update;
+use Freddie\Hub\Transport\Redis\RedisPublisher;
+use Freddie\Hub\Transport\Redis\RedisSubscriber;
+use Freddie\Hub\Transport\Redis\RedisTransport;
+use Freddie\Message\Message;
+use Freddie\Message\Update;
 use React\EventLoop\Loop;
 
 it('dispatches published updates', function () {

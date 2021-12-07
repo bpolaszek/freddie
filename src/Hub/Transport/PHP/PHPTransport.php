@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Hub\Transport\PHP;
+namespace Freddie\Hub\Transport\PHP;
 
-use BenTools\MercurePHP\Hub\Transport\TransportInterface;
-use BenTools\MercurePHP\Message\Update;
+use Freddie\Hub\Transport\TransportInterface;
+use Freddie\Message\Update;
 use Evenement\EventEmitter;
 use Evenement\EventEmitterInterface;
 use Generator;

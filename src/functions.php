@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP;
+namespace Freddie;
 
-use BenTools\MercurePHP\Helper\FlatQueryParser;
-use BenTools\MercurePHP\Helper\TopicHelper;
+use Freddie\Helper\FlatQueryParser;
+use Freddie\Helper\TopicHelper;
 use Psr\Http\Message\ServerRequestInterface;
 
 use function BenTools\QueryString\query_string;

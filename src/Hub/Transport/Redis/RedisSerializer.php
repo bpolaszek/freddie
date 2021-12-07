@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Hub\Transport\Redis;
+namespace Freddie\Hub\Transport\Redis;
 
-use BenTools\MercurePHP\Message\Update;
+use Freddie\Message\Update;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;

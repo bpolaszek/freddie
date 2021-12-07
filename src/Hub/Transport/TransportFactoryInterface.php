@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Hub\Transport;
+namespace Freddie\Hub\Transport;
 
 interface TransportFactoryInterface
 {

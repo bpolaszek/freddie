@@ -6,9 +6,9 @@ parameters:
 
 services:
     _instanceof:
-        BenTools\MercurePHP\Hub\HubControllerInterface:
+        Freddie\Hub\HubControllerInterface:
             tags: ['mercure.controller']
-        BenTools\MercurePHP\Hub\Transport\TransportFactoryInterface:
+        Freddie\Hub\Transport\TransportFactoryInterface:
             tags: ['mercure.transport_factory']
 
     _defaults:
@@ -18,7 +18,7 @@ services:
             iterable $controllers: !tagged_iterator mercure.controller
 
 
-    BenTools\MercurePHP\:
+    Freddie\:
         resource: '%kernel.project_dir%/src/'
         exclude:
             - '%kernel.project_dir%/src/Hub/Transport/Redis/RedisPublisher.php'
@@ -27,18 +27,18 @@ services:
             - '%kernel.project_dir%/src/Kernel.php'
             - '%kernel.project_dir%/src/functions.php'
 
-    BenTools\MercurePHP\Hub\Controller\SubscribeController:
+    Freddie\Hub\Controller\SubscribeController:
         arguments:
             $options:
                 allow_anonymous: '%allow_anonymous%'
 
-    BenTools\MercurePHP\Security\JWT\Extractor\PSR7TokenExtractorInterface: '@BenTools\MercurePHP\Security\JWT\Extractor\ChainTokenExtractor'
-    BenTools\MercurePHP\Hub\Transport\TransportFactory:
+    Freddie\Security\JWT\Extractor\PSR7TokenExtractorInterface: '@Freddie\Security\JWT\Extractor\ChainTokenExtractor'
+    Freddie\Hub\Transport\TransportFactory:
         arguments:
             $factories: !tagged_iterator mercure.transport_factory
 
-    BenTools\MercurePHP\Hub\Transport\TransportInterface:
-        factory: ['@BenTools\MercurePHP\Hub\Transport\TransportFactory', 'create']
+    Freddie\Hub\Transport\TransportInterface:
+        factory: ['@Freddie\Hub\Transport\TransportFactory', 'create']
         arguments: ['%transport_dsn%']
 
     Evenement\EventEmitter: ~

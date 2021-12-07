@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Helper;
+namespace Freddie\Tests\Unit\Helper;
 
-use BenTools\MercurePHP\Helper\FlatQueryParser;
+use Freddie\Helper\FlatQueryParser;
 
 use function BenTools\QueryString\query_string;
 

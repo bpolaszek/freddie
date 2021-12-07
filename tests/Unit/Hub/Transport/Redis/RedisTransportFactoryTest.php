@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Hub\Transport\Redis;
+namespace Freddie\Tests\Unit\Hub\Transport\Redis;
 
-use BenTools\MercurePHP\Hub\Transport\Redis\RedisPublisher;
-use BenTools\MercurePHP\Hub\Transport\Redis\RedisSubscriber;
-use BenTools\MercurePHP\Hub\Transport\Redis\RedisTransport;
-use BenTools\MercurePHP\Hub\Transport\Redis\RedisTransportFactory;
+use Freddie\Hub\Transport\Redis\RedisPublisher;
+use Freddie\Hub\Transport\Redis\RedisSubscriber;
+use Freddie\Hub\Transport\Redis\RedisTransport;
+use Freddie\Hub\Transport\Redis\RedisTransportFactory;
 use Clue\React\Redis\Client;
 use Clue\React\Redis\Factory;
 

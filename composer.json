@@ -52,7 +52,7 @@
     },
     "autoload": {
         "psr-4": {
-            "BenTools\\MercurePHP\\": "src"
+            "Freddie\\": "src"
         },
         "files": [
             "src/functions.php"
@@ -60,7 +60,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "BenTools\\MercurePHP\\Tests\\": "tests"
+            "Freddie\\Tests\\": "tests"
         }
     },
     "replace": {

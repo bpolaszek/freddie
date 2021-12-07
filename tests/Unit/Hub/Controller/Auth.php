@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Hub\Controller;
+namespace Freddie\Tests\Unit\Hub\Controller;
 
 use Lexik\Bundle\JWTAuthenticationBundle\Encoder\JWTEncoderInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Encoder\LcobucciJWTEncoder;

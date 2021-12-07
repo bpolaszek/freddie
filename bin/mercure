@@ -3,7 +3,7 @@
 
 declare(strict_types=1);
 
-use BenTools\MercurePHP\Kernel;
+use Freddie\Kernel;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 
 if (!is_file(dirname(__DIR__).'/vendor/autoload_runtime.php')) {

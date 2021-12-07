@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Hub\Transport;
+namespace Freddie\Hub\Transport;
 
-use BenTools\MercurePHP\Hub\Transport\PHP\PHPTransportFactory;
-use BenTools\MercurePHP\Hub\Transport\Redis\RedisTransportFactory;
+use Freddie\Hub\Transport\PHP\PHPTransportFactory;
+use Freddie\Hub\Transport\Redis\RedisTransportFactory;
 use InvalidArgumentException;
 
 final class TransportFactory

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Message;
+namespace Freddie\Tests\Unit\Message;
 
-use BenTools\MercurePHP\Message\Message;
-use BenTools\MercurePHP\Message\Update;
+use Freddie\Message\Message;
+use Freddie\Message\Update;
 
 it('can be published', function (Update $update, array $allowedTopics, bool $expected) {
     expect($update->canBePublished($allowedTopics))->toBe($expected);

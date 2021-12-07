@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Hub\Controller;
+namespace Freddie\Hub\Controller;
 
-use BenTools\MercurePHP\Helper\FlatQueryParser;
-use BenTools\MercurePHP\Hub\HubControllerInterface;
-use BenTools\MercurePHP\Hub\Transport\TransportInterface;
-use BenTools\MercurePHP\Message\Update;
-use BenTools\MercurePHP\Security\JWT\Extractor\PSR7TokenExtractorInterface;
+use Freddie\Helper\FlatQueryParser;
+use Freddie\Hub\HubControllerInterface;
+use Freddie\Hub\Transport\TransportInterface;
+use Freddie\Message\Update;
+use Freddie\Security\JWT\Extractor\PSR7TokenExtractorInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Encoder\JWTEncoderInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Exception\JWTDecodeFailureException;
 use Psr\Http\Message\ResponseInterface;
@@ -21,7 +21,7 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
-use function BenTools\MercurePHP\extract_last_event_id;
+use function Freddie\extract_last_event_id;
 use function BenTools\QueryString\query_string;
 use function React\Async\async;
 

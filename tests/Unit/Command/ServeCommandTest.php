@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Command;
+namespace Freddie\Tests\Unit\Command;
 
-use BenTools\MercurePHP\Command\ServeCommand;
-use BenTools\MercurePHP\Hub\Hub;
+use Freddie\Command\ServeCommand;
+use Freddie\Hub\Hub;
 use React\EventLoop\Loop;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;

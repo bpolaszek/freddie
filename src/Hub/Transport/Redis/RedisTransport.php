@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Hub\Transport\Redis;
+namespace Freddie\Hub\Transport\Redis;
 
-use BenTools\MercurePHP\Hub\Transport\TransportInterface;
-use BenTools\MercurePHP\Message\Update;
+use Freddie\Hub\Transport\TransportInterface;
+use Freddie\Message\Update;
 use Generator;
 use React\EventLoop\Loop;
 

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Hub\Transport;
+namespace Freddie\Hub\Transport;
 
-use BenTools\MercurePHP\Message\Update;
+use Freddie\Message\Update;
 use Generator;
 
 interface TransportInterface

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Hub\Controller;
+namespace Freddie\Tests\Unit\Hub\Controller;
 
-use BenTools\MercurePHP\Hub\Controller\SubscribeController;
-use BenTools\MercurePHP\Hub\Transport\PHP\PHPTransport;
-use BenTools\MercurePHP\Message\Message;
-use BenTools\MercurePHP\Message\Update;
-use BenTools\MercurePHP\Security\JWT\Extractor\ChainTokenExtractor;
+use Freddie\Hub\Controller\SubscribeController;
+use Freddie\Hub\Transport\PHP\PHPTransport;
+use Freddie\Message\Message;
+use Freddie\Message\Update;
+use Freddie\Security\JWT\Extractor\ChainTokenExtractor;
 use React\EventLoop\Loop;
 use React\Http\Message\ServerRequest;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
