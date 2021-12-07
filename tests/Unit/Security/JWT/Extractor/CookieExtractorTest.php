@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Security\JWT\Extractor;
+namespace Freddie\Tests\Unit\Security\JWT\Extractor;
 
-use BenTools\MercurePHP\Security\JWT\Extractor\CookieTokenExtractor;
+use Freddie\Security\JWT\Extractor\CookieTokenExtractor;
 use React\Http\Message\ServerRequest;
 
 it('extracts token from cookies', function () {

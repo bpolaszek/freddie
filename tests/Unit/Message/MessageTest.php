@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Message;
+namespace Freddie\Tests\Unit\Message;
 
-use BenTools\MercurePHP\Message\Message;
+use Freddie\Message\Message;
 
 it('stringifies messages', function (Message $message, string $expected) {
     expect((string) $message)->toBe($expected);

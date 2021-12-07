@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Hub;
+namespace Freddie\Hub;
 
 use FrameworkX\App;
 use Psr\Http\Message\ResponseInterface;

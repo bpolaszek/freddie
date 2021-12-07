@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Command;
+namespace Freddie\Command;
 
-use BenTools\MercurePHP\Hub\Hub;
+use Freddie\Hub\Hub;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;

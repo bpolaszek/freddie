@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit;
+namespace Freddie\Tests\Unit;
 
 use Psr\Http\Message\ServerRequestInterface;
 use RingCentral\Psr7\ServerRequest;
 
-use function BenTools\MercurePHP\extract_last_event_id;
-use function BenTools\MercurePHP\is_truthy;
-use function BenTools\MercurePHP\nullify;
+use function Freddie\extract_last_event_id;
+use function Freddie\is_truthy;
+use function Freddie\nullify;
 
 it('is truthy', function (mixed $input, bool $expected) {
     expect(is_truthy($input))->toBe($expected);

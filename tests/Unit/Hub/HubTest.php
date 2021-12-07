@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Hub;
+namespace Freddie\Tests\Unit\Hub;
 
-use BenTools\MercurePHP\Hub\Hub;
+use Freddie\Hub\Hub;
 use Psr\Http\Message\ResponseInterface;
 use React\Http\Message\Response;
 use React\Http\Message\ServerRequest;

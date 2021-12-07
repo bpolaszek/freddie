@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Hub\Transport\PHP;
+namespace Freddie\Tests\Unit\Hub\Transport\PHP;
 
-use BenTools\MercurePHP\Hub\Transport\PHP\PHPTransport;
-use BenTools\MercurePHP\Hub\Transport\PHP\PHPTransportFactory;
+use Freddie\Hub\Transport\PHP\PHPTransport;
+use Freddie\Hub\Transport\PHP\PHPTransportFactory;
 
 it('supports PHP DSNs', function (string $dsn, bool $expected) {
     $factory = new PHPTransportFactory();

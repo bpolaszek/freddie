@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Hub\Transport;
+namespace Freddie\Tests\Unit\Hub\Transport;
 
-use BenTools\MercurePHP\Hub\Transport\PHP\PHPTransport;
-use BenTools\MercurePHP\Hub\Transport\Redis\RedisTransport;
-use BenTools\MercurePHP\Hub\Transport\TransportFactory;
+use Freddie\Hub\Transport\PHP\PHPTransport;
+use Freddie\Hub\Transport\Redis\RedisTransport;
+use Freddie\Hub\Transport\TransportFactory;
 use InvalidArgumentException;
 
 it('picks the appropriate factory', function (string $dsn, string $transportClass) {

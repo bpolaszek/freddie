@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Hub\Transport\Redis;
+namespace Freddie\Hub\Transport\Redis;
 
-use BenTools\MercurePHP\Message\Update;
+use Freddie\Message\Update;
 use Clue\React\Redis\Client;
 use Symfony\Component\Serializer\SerializerInterface;
 

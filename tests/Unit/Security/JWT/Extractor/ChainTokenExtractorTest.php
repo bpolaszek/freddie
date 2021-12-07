@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Security\JWT\Extractor;
+namespace Freddie\Tests\Unit\Security\JWT\Extractor;
 
-use BenTools\MercurePHP\Security\JWT\Extractor\ChainTokenExtractor;
+use Freddie\Security\JWT\Extractor\ChainTokenExtractor;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\ServerRequest;
 

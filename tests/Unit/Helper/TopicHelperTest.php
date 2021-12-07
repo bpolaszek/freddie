@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Helper;
+namespace Freddie\Tests\Unit\Helper;
 
-use function BenTools\MercurePHP\topic;
+use function Freddie\topic;
 
 it('matches topics', function (string $topic, array $matches, bool $expected) {
     expect(topic($topic)->match($matches))->toBe($expected);

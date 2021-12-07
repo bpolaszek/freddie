@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Message;
+namespace Freddie\Message;
 
 use function explode;
 use function str_contains;

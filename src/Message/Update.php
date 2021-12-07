@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Message;
+namespace Freddie\Message;
 
-use BenTools\MercurePHP\Helper\TopicHelper;
+use Freddie\Helper\TopicHelper;
 
-use function BenTools\MercurePHP\topic;
+use function Freddie\topic;
 
 final class Update
 {

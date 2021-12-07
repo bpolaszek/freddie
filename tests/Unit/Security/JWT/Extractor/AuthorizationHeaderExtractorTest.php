@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Security\JWT\Extractor;
+namespace Freddie\Tests\Unit\Security\JWT\Extractor;
 
-use BenTools\MercurePHP\Security\JWT\Extractor\AuthorizationHeaderTokenExtractor;
+use Freddie\Security\JWT\Extractor\AuthorizationHeaderTokenExtractor;
 use React\Http\Message\ServerRequest;
 
 it('extracts token from authorization header', function (array $headers, ?string $expected) {

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Hub\Transport\Redis;
+namespace Freddie\Hub\Transport\Redis;
 
-use BenTools\MercurePHP\Hub\Transport\TransportFactoryInterface;
-use BenTools\MercurePHP\Hub\Transport\TransportInterface;
+use Freddie\Hub\Transport\TransportFactoryInterface;
+use Freddie\Hub\Transport\TransportInterface;
 use Clue\React\Redis\Factory;
 use Nyholm\Dsn\DsnParser;
 

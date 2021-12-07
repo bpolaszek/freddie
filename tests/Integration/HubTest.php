@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Integration;
+namespace Freddie\Tests\Integration;
 
-use BenTools\MercurePHP\Tests\Unit\Hub\Controller\Auth;
+use Freddie\Tests\Unit\Hub\Controller\Auth;
 use Clue\React\EventSource\EventSource;
 use Clue\React\EventSource\MessageEvent;
 use React\EventLoop\Loop;

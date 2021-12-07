@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Hub\Controller;
+namespace Freddie\Tests\Unit\Hub\Controller;
 
 use Evenement\EventEmitterTrait;
 use LogicException;

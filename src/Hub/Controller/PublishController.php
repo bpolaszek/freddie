@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Hub\Controller;
+namespace Freddie\Hub\Controller;
 
-use BenTools\MercurePHP\Helper\FlatQueryParser;
-use BenTools\MercurePHP\Hub\HubControllerInterface;
-use BenTools\MercurePHP\Hub\Transport\TransportInterface;
-use BenTools\MercurePHP\Message\Message;
-use BenTools\MercurePHP\Message\Update;
-use BenTools\MercurePHP\Security\JWT\Extractor\PSR7TokenExtractorInterface;
+use Freddie\Helper\FlatQueryParser;
+use Freddie\Hub\HubControllerInterface;
+use Freddie\Hub\Transport\TransportInterface;
+use Freddie\Message\Message;
+use Freddie\Message\Update;
+use Freddie\Security\JWT\Extractor\PSR7TokenExtractorInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Encoder\JWTEncoderInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Exception\JWTDecodeFailureException;
 use Psr\Http\Message\ResponseInterface;
@@ -19,8 +19,8 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Uid\Ulid;
 
-use function BenTools\MercurePHP\is_truthy;
-use function BenTools\MercurePHP\nullify;
+use function Freddie\is_truthy;
+use function Freddie\nullify;
 use function BenTools\QueryString\query_string;
 
 final class PublishController implements HubControllerInterface

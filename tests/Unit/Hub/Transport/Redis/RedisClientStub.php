@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Hub\Transport\Redis;
+namespace Freddie\Tests\Unit\Hub\Transport\Redis;
 
 use ArrayObject;
 use Clue\React\Redis\Client;

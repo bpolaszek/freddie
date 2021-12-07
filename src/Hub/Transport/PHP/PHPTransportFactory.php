@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Hub\Transport\PHP;
+namespace Freddie\Hub\Transport\PHP;
 
-use BenTools\MercurePHP\Hub\Transport\TransportFactoryInterface;
-use BenTools\MercurePHP\Hub\Transport\TransportInterface;
+use Freddie\Hub\Transport\TransportFactoryInterface;
+use Freddie\Hub\Transport\TransportInterface;
 use Evenement\EventEmitter;
 use Evenement\EventEmitterInterface;
 use Nyholm\Dsn\DsnParser;

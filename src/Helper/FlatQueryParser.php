@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Helper;
+namespace Freddie\Helper;
 
 use BenTools\QueryString\Parser\QueryStringParserInterface;
 

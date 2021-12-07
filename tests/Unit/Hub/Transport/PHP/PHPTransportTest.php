@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace BenTools\MercurePHP\Tests\Unit\Hub\Transport\PHP;
+namespace Freddie\Tests\Unit\Hub\Transport\PHP;
 
-use BenTools\MercurePHP\Hub\Transport\PHP\PHPTransport;
-use BenTools\MercurePHP\Message\Message;
-use BenTools\MercurePHP\Message\Update;
+use Freddie\Hub\Transport\PHP\PHPTransport;
+use Freddie\Message\Message;
+use Freddie\Message\Update;
 
 use function array_slice;
 use function iterator_to_array;
