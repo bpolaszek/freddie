@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace Freddie\Tests\Unit\Hub\Transport\Redis;
 
-use Freddie\Hub\Transport\Redis\RedisPublisher;
-use Freddie\Hub\Transport\Redis\RedisSubscriber;
+use ArrayObject;
+use Evenement\EventEmitter;
 use Freddie\Hub\Transport\Redis\RedisTransport;
 use Freddie\Message\Message;
 use Freddie\Message\Update;
 use React\EventLoop\Loop;
 
 it('dispatches published updates', function () {
-    $client = new RedisClientStub();
-    $redisPublisher = new RedisPublisher(redis: $client);
-    $redisSubscriber = new RedisSubscriber(redis: $client);
-    $transport = new RedisTransport($redisPublisher, $redisSubscriber);
+    $storage = new ArrayObject();
+    $eventEmitter = new EventEmitter();
+    $transport = new RedisTransport(
+        new RedisClientStub($storage, $eventEmitter),
+        new RedisClientStub($storage, $eventEmitter)
+    );
 
     // Given
     $subscriber = (object) ['received' => null];
@@ -32,9 +34,7 @@ it('dispatches published updates', function () {
 
 it('performs state reconciliation', function () {
     $client = new RedisClientStub();
-    $redisPublisher = new RedisPublisher(redis: $client);
-    $redisSubscriber = new RedisSubscriber(redis: $client);
-    $transport = new RedisTransport($redisPublisher, $redisSubscriber, size: 3);
+    $transport = new RedisTransport($client, clone $client, size: 3);
 
     // Given
     $updates = [
@@ -75,9 +75,7 @@ it('performs state reconciliation', function () {
 
 it('periodically trims the database', function () {
     $client = new RedisClientStub();
-    $redisPublisher = new RedisPublisher(redis: $client);
-    $redisSubscriber = new RedisSubscriber(redis: $client);
-    $transport = new RedisTransport($redisPublisher, $redisSubscriber, size: 3, trimInterval: 0.01);
+    $transport = new RedisTransport($client, clone $client, size: 3, trimInterval: 0.01);
 
     // Given
     $updates = [

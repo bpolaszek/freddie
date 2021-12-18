@@ -6,6 +6,8 @@ namespace Freddie\Tests\Unit\Hub\Transport\Redis;
 
 use ArrayObject;
 use Clue\React\Redis\Client;
+use Evenement\EventEmitter;
+use Evenement\EventEmitterInterface;
 use Evenement\EventEmitterTrait;
 use Pest\Exceptions\ShouldNotHappen;
 
@@ -16,14 +18,12 @@ use function React\Async\async;
 
 final class RedisClientStub implements Client
 {
-    use EventEmitterTrait;
-
     public array $subscribedChannels = [];
-    public readonly ArrayObject $storage;
 
-    public function __construct()
-    {
-        $this->storage = new ArrayObject();
+    public function __construct(
+        public readonly ArrayObject $storage = new ArrayObject(),
+        private EventEmitterInterface $eventEmitter = new EventEmitter(),
+    ) {
     }
 
     public function subscribe(string $channel): void
@@ -76,5 +76,35 @@ final class RedisClientStub implements Client
     public function close(): void
     {
         throw new ShouldNotHappen(new \LogicException(__METHOD__));
+    }
+
+    public function on($event, callable $listener)
+    {
+        $this->eventEmitter->on(...\func_get_args());
+    }
+
+    public function once($event, callable $listener)
+    {
+        $this->eventEmitter->once(...\func_get_args());
+    }
+
+    public function removeListener($event, callable $listener)
+    {
+        $this->eventEmitter->removeListener(...\func_get_args());
+    }
+
+    public function removeAllListeners($event = null)
+    {
+        $this->eventEmitter->removeAllListeners(...\func_get_args());
+    }
+
+    public function listeners($event = null)
+    {
+        return $this->eventEmitter->listeners(...\func_get_args());
+    }
+
+    public function emit($event, array $arguments = [])
+    {
+        $this->eventEmitter->emit(...\func_get_args());
     }
 }
