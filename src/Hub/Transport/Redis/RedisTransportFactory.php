@@ -28,12 +28,12 @@ final class RedisTransportFactory implements TransportFactoryInterface
     public function create(string $dsn): TransportInterface
     {
         $parsed = DsnParser::parse($dsn);
-        $publisher = $this->factory->createLazyClient($dsn);
-        $listener = $this->factory->createLazyClient($dsn);
+        $redis = $this->factory->createLazyClient($dsn);
+        $subscriber = $this->factory->createLazyClient($dsn); // Create a 2nd, blocking connection to receive updates
 
         return new RedisTransport(
-            new RedisPublisher($publisher, $this->serializer),
-            new RedisSubscriber($listener, $this->serializer),
+            $subscriber,
+            $redis,
             $this->serializer,
             size: (int) max(0, $parsed->getParameter('size', 0)),
             trimInterval: (float) max(0, $parsed->getParameter('trimInterval', 0.0)),

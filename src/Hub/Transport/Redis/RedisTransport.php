@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Freddie\Hub\Transport\Redis;
 
+use Clue\React\Redis\Client;
 use Freddie\Hub\Transport\TransportInterface;
 use Freddie\Message\Update;
 use Generator;
@@ -13,37 +14,44 @@ use function React\Async\await;
 
 final class RedisTransport implements TransportInterface
 {
+    private string $channel = 'mercure';
     private string $storageKey = 'mercureUpdates';
     private bool $initialized = false;
 
     public function __construct(
-        public readonly RedisPublisher $writer,
-        public readonly RedisSubscriber $reader,
+        public readonly Client $subscriber,
+        public readonly Client $redis,
         private RedisSerializer $serializer = new RedisSerializer(),
         private int $size = 0,
         private float $trimInterval = 0.0,
     ) {
     }
 
-    public function publish(Update $update): void
-    {
-        $this->writer->publish($update);
-        $this->store($update);
-    }
-
     public function subscribe(callable $callback): void
     {
-        $this->reader->subscribe($callback);
+        $this->init();
+        $this->subscriber->on('message', function (string $channel, string $payload) use ($callback) {
+            $callback($this->serializer->deserialize($payload));
+        });
+    }
+
+    public function publish(Update $update): void
+    {
+        $this->init();
+        $payload = $this->serializer->serialize($update);
+        $this->redis->publish($this->channel, $payload); // @phpstan-ignore-line
+        $this->store($update);
     }
 
     public function reconciliate(string $lastEventID): Generator
     {
+        $this->init();
         if ($this->size <= 0) {
             return; // @codeCoverageIgnore
         }
 
         $yield = self::EARLIEST === $lastEventID;
-        $payloads = await($this->writer->redis->lrange($this->storageKey, -$this->size, -1)); // @phpstan-ignore-line
+        $payloads = await($this->redis->lrange($this->storageKey, -$this->size, -1)); // @phpstan-ignore-line
         foreach ($payloads as $payload) {
             $update = $this->serializer->deserialize($payload);
             if ($yield) {
@@ -57,24 +65,25 @@ final class RedisTransport implements TransportInterface
 
     private function store(Update $update): void
     {
-        $this->initGarbageCollector();
+        $this->init();
         if ($this->size <= 0) {
             return;
         }
 
-        $this->writer->redis->rpush($this->storageKey, $this->serializer->serialize($update)); // @phpstan-ignore-line
+        $this->redis->rpush($this->storageKey, $this->serializer->serialize($update)); // @phpstan-ignore-line
     }
 
-    private function initGarbageCollector(): void
+    private function init(): void
     {
         if (true === $this->initialized) {
             return;
         }
 
+        $this->subscriber->subscribe($this->channel); // @phpstan-ignore-line
         if ($this->trimInterval > 0) {
             Loop::addPeriodicTimer(
                 $this->trimInterval,
-                fn () => $this->writer->redis->ltrim($this->storageKey, -$this->size, -1) // @phpstan-ignore-line
+                fn () => $this->redis->ltrim($this->storageKey, -$this->size, -1) // @phpstan-ignore-line
             );
         }
         $this->initialized = true;
