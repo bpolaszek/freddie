@@ -6,12 +6,10 @@ namespace Freddie\Hub\Controller;
 
 use Freddie\Helper\FlatQueryParser;
 use Freddie\Hub\HubControllerInterface;
+use Freddie\Hub\Transport\PHP\PHPTransport;
 use Freddie\Hub\Transport\TransportInterface;
 use Freddie\Message\Message;
 use Freddie\Message\Update;
-use Freddie\Security\JWT\Extractor\PSR7TokenExtractorInterface;
-use Lexik\Bundle\JWTAuthenticationBundle\Encoder\JWTEncoderInterface;
-use Lexik\Bundle\JWTAuthenticationBundle\Exception\JWTDecodeFailureException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
@@ -19,25 +17,28 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Uid\Ulid;
 
+use function BenTools\QueryString\query_string;
 use function Freddie\is_truthy;
 use function Freddie\nullify;
-use function BenTools\QueryString\query_string;
 
 final class PublishController implements HubControllerInterface
 {
-
     public function __construct(
-        private TransportInterface $transport,
-        private PSR7TokenExtractorInterface $tokenExtractor,
-        private JWTEncoderInterface $JWTEncoder,
+        private TransportInterface $transport = new PHPTransport(),
     ) {
     }
 
+    /**
+     * @codeCoverageIgnore
+     */
     public function getMethod(): string
     {
         return 'post';
     }
 
+    /**
+     * @codeCoverageIgnore
+     */
     public function getRoute(): string
     {
         return '/.well-known/mercure';
@@ -75,16 +76,8 @@ final class PublishController implements HubControllerInterface
      */
     private function extractAllowedTopics(ServerRequestInterface $request): array
     {
-        $token = $this->tokenExtractor->extract($request);
-        if (null === $token) {
-            throw new AccessDeniedHttpException('You must be authenticated to publish on this hub.');
-        }
-
-        try {
-            $jwt = $this->JWTEncoder->decode($token);
-        } catch (JWTDecodeFailureException $e) {
-            throw new AccessDeniedHttpException($e->getMessage(), $e);
-        }
+        $jwt = $request->getAttribute('token')
+            ?? throw new AccessDeniedHttpException('You must be authenticated to publish on this hub.');
 
         return $jwt['mercure']['publish']
             ?? throw new AccessDeniedHttpException('Missing mercure.publish claim.');

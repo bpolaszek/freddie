@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Freddie\Tests\Unit\Hub\Controller;
 
+use FrameworkX\App;
 use Freddie\Hub\Controller\PublishController;
-use Freddie\Hub\Hub;
+use Freddie\Hub\Middleware\HttpExceptionConverterMiddleware;
+use Freddie\Hub\Middleware\TokenExtractorMiddleware;
 use Freddie\Hub\Transport\PHP\PHPTransport;
 use Freddie\Message\Message;
 use Freddie\Message\Update;
-use Freddie\Security\JWT\Extractor\ChainTokenExtractor;
 use Psr\Http\Message\ResponseInterface;
 use React\Http\Message\Response;
 use React\Http\Message\ServerRequest;
@@ -17,6 +18,9 @@ use ReflectionClass;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Uid\Ulid;
+
+use function Freddie\Tests\handle;
+use function Freddie\Tests\with_token;
 
 it('publishes updates to the hub', function (
     string $payload,
@@ -26,14 +30,14 @@ it('publishes updates to the hub', function (
 ) {
     $JWTEncoder = Auth::getJWTEncoder();
     $transport = new PHPTransport(size: 1);
-    $controller = new PublishController(
-        $transport,
-        new ChainTokenExtractor(),
-        $JWTEncoder,
+    $controller = new PublishController($transport);
+    $app = new App(
+        new TokenExtractorMiddleware($JWTEncoder),
+        new HttpExceptionConverterMiddleware(),
+        $controller,
     );
-    $hub = new Hub([$controller]);
-    $refl = new ReflectionClass($transport);
-    $updates = $refl->getProperty('updates');
+    $transportRefl = new ReflectionClass($transport);
+    $updates = $transportRefl->getProperty('updates');
     $updates->setAccessible(true);
 
     // Given
@@ -49,7 +53,7 @@ it('publishes updates to the hub', function (
     );
 
     // When
-    $response = $hub($request, $controller);
+    $response = handle($app, $request);
     $update = $updates->getValue($transport)[0] ?? null;
 
     // Then
@@ -79,11 +83,7 @@ it('publishes updates to the hub', function (
 });
 
 it('complains when no jwt is provided', function () {
-    $controller = new PublishController(
-        new PHPTransport(),
-        new ChainTokenExtractor(),
-        Auth::getJWTEncoder(),
-    );
+    $controller = new PublishController();
 
     // Given
     $request = new ServerRequest(
@@ -102,22 +102,21 @@ it('complains when no jwt is provided', function () {
 
 it('complains when JWT is invalid', function () {
     $JWTEncoder = Auth::getJWTEncoder();
-    $controller = new PublishController(
-        new PHPTransport(),
-        new ChainTokenExtractor(),
-        $JWTEncoder,
-    );
+    $controller = new PublishController();
 
     // Given
     $jwt = $JWTEncoder->encode(['mercure' => ['publish' => ['*']]]) . 'foo';
-    $request = new ServerRequest(
-        'POST',
-        '/.well-known/mercure',
-        [
-            'Authorization' => "Bearer $jwt",
-            'Content-Type' => 'application/x-www-form-urlencoded'
-        ],
-        'topic=/foo&data=bar'
+    $request = with_token(
+        new ServerRequest(
+            'POST',
+            '/.well-known/mercure',
+            [
+                'Authorization' => "Bearer $jwt",
+                'Content-Type' => 'application/x-www-form-urlencoded',
+            ],
+            'topic=/foo&data=bar'
+        ),
+        $jwt
     );
 
     // When
@@ -129,22 +128,21 @@ it('complains when JWT is invalid', function () {
 
 it('complains if JWT does not contain a mercure.publish claim', function () {
     $JWTEncoder = Auth::getJWTEncoder();
-    $controller = new PublishController(
-        new PHPTransport(),
-        new ChainTokenExtractor(),
-        $JWTEncoder,
-    );
+    $controller = new PublishController();
 
     // Given
     $jwt = $JWTEncoder->encode([]);
-    $request = new ServerRequest(
-        'POST',
-        '/.well-known/mercure',
-        [
-            'Authorization' => "Bearer $jwt",
-            'Content-Type' => 'application/x-www-form-urlencoded'
-        ],
-        'topic=/foo&data=bar'
+    $request = with_token(
+        new ServerRequest(
+            'POST',
+            '/.well-known/mercure',
+            [
+                'Authorization' => "Bearer $jwt",
+                'Content-Type' => 'application/x-www-form-urlencoded',
+            ],
+            'topic=/foo&data=bar'
+        ),
+        $jwt
     );
 
     // When
@@ -155,11 +153,7 @@ it('complains if JWT does not contain a mercure.publish claim', function () {
 );
 
 it('yells when no topic is provided', function () {
-    $controller = new PublishController(
-        new PHPTransport(),
-        new ChainTokenExtractor(),
-        Auth::getJWTEncoder(),
-    );
+    $controller = new PublishController();
 
     // Given
     $request = new ServerRequest(
@@ -180,22 +174,21 @@ it('yells when no topic is provided', function () {
 
 it('yells when update cannot be published', function () {
     $JWTEncoder = Auth::getJWTEncoder();
-    $controller = new PublishController(
-        new PHPTransport(),
-        new ChainTokenExtractor(),
-        $JWTEncoder,
-    );
+    $controller = new PublishController();
 
     // Given
     $jwt = $JWTEncoder->encode(['mercure' => ['publish' => ['/bar']]]);
-    $request = new ServerRequest(
-        'POST',
-        '/.well-known/mercure',
-        [
-            'Authorization' => "Bearer $jwt",
-            'Content-Type' => 'application/x-www-form-urlencoded',
-        ],
-        'topic=/foo&data=bar&private=yes'
+    $request = with_token(
+        new ServerRequest(
+            'POST',
+            '/.well-known/mercure',
+            [
+                'Authorization' => "Bearer $jwt",
+                'Content-Type' => 'application/x-www-form-urlencoded',
+            ],
+            'topic=/foo&data=bar&private=yes'
+        ),
+        $jwt
     );
 
     // When

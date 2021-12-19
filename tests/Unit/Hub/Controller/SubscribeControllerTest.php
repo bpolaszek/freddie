@@ -4,23 +4,25 @@ declare(strict_types=1);
 
 namespace Freddie\Tests\Unit\Hub\Controller;
 
+use FrameworkX\App;
 use Freddie\Hub\Controller\SubscribeController;
+use Freddie\Hub\Middleware\HttpExceptionConverterMiddleware;
 use Freddie\Hub\Transport\PHP\PHPTransport;
 use Freddie\Message\Message;
 use Freddie\Message\Update;
-use Freddie\Security\JWT\Extractor\ChainTokenExtractor;
 use React\EventLoop\Loop;
 use React\Http\Message\ServerRequest;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
+use function Freddie\Tests\with_token;
+
 it('receives updates and dumps them into the stream', function () {
     $transport = new PHPTransport(size: 1000);
-    $controller = new SubscribeController(
-        $transport,
-        new ChainTokenExtractor(),
-        Auth::getJWTEncoder(),
-        ['allow_anonymous' => true]
+    $controller = new SubscribeController(['allow_anonymous' => true], $transport);
+    $app = new App(
+        new HttpExceptionConverterMiddleware(),
+        $controller,
     );
     $stream = new ThroughStreamStub();
 
@@ -55,12 +57,7 @@ it('receives updates and dumps them into the stream', function () {
 it('receives private updates when authorized', function () {
     $transport = new PHPTransport(size: 1000);
     $JWTEncoder = Auth::getJWTEncoder();
-    $controller = new SubscribeController(
-        $transport,
-        new ChainTokenExtractor(),
-        $JWTEncoder,
-        ['allow_anonymous' => true]
-    );
+    $controller = new SubscribeController(['allow_anonymous' => true], $transport);
     $stream = new ThroughStreamStub();
 
     // Given
@@ -71,13 +68,16 @@ it('receives private updates when authorized', function () {
     $transport->publish(new Update(['/bar'], $hey)); // Should not be dumped into stream
     $transport->publish(new Update(['/foo'], $hello));
     $jwt = $JWTEncoder->encode(['mercure' => ['subscribe' => ['/foo']]]);
-    $request = new ServerRequest(
-        'GET',
-        '/.well-known/mercure?topic=/foo&topic=/bar',
-        [
-            'Authorization' => "Bearer $jwt",
-            'Last-Event-ID' => 'earliest',
-        ],
+    $request = with_token(
+        new ServerRequest(
+            'GET',
+            '/.well-known/mercure?topic=/foo&topic=/bar',
+            [
+                'Authorization' => "Bearer $jwt",
+                'Last-Event-ID' => 'earliest',
+            ],
+        ),
+        $jwt
     );
 
     // When
@@ -97,13 +97,7 @@ it('receives private updates when authorized', function () {
 });
 
 it('yells if user doesn\'t subscribe to at least one topic', function () {
-    $transport = new PHPTransport();
-    $controller = new SubscribeController(
-        $transport,
-        new ChainTokenExtractor(),
-        Auth::getJWTEncoder(),
-        ['allow_anonymous' => true]
-    );
+    $controller = new SubscribeController(['allow_anonymous' => true]);
 
     // Given
     $request = new ServerRequest(
@@ -122,13 +116,7 @@ it('yells if user doesn\'t subscribe to at least one topic', function () {
 );
 
 it('yells when anonymous subscriptions are forbidden and user doesn\'t provide a JWT', function () {
-    $transport = new PHPTransport();
-    $controller = new SubscribeController(
-        $transport,
-        new ChainTokenExtractor(),
-        Auth::getJWTEncoder(),
-        ['allow_anonymous' => false]
-    );
+    $controller = new SubscribeController(['allow_anonymous' => false]);
 
     // Given
     $request = new ServerRequest(
@@ -147,24 +135,21 @@ it('yells when anonymous subscriptions are forbidden and user doesn\'t provide a
 );
 
 it('complains if JWT is invalid', function () {
-    $transport = new PHPTransport();
     $JWTEncoder = Auth::getJWTEncoder();
-    $controller = new SubscribeController(
-        $transport,
-        new ChainTokenExtractor(),
-        $JWTEncoder,
-        ['allow_anonymous' => false]
-    );
+    $controller = new SubscribeController(['allow_anonymous' => false]);
 
     // Given
     $jwt = $JWTEncoder->encode(['mercure' => ['publish' => ['*']]]) . 'foo';
-    $request = new ServerRequest(
-        'GET',
-        '/.well-known/mercure?topic=/foo',
-        [
-            'Authorization' => "Bearer $jwt",
-            'Last-Event-ID' => 'earliest',
-        ],
+    $request = with_token(
+        new ServerRequest(
+            'GET',
+            '/.well-known/mercure?topic=/foo',
+            [
+                'Authorization' => "Bearer $jwt",
+                'Last-Event-ID' => 'earliest',
+            ],
+        ),
+        $jwt
     );
 
     // When
