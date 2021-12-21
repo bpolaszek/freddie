@@ -78,8 +78,16 @@
         "phpstan:analyze": "vendor/bin/phpstan analyse",
         "linter:check": "vendor/bin/phpcs",
         "linter:fix": "vendor/bin/phpcbf",
-        "tests:run": "vendor/bin/pest",
-        "tests:run:with-coverage": "vendor/bin/pest --coverage --min=100",
+        "tests:unit:run": "vendor/bin/pest --testsuite='Unit tests'",
+        "tests:integration:run": "vendor/bin/pest --testsuite='Integration tests'",
+        "tests:run": [
+            "@tests:integration:run",
+            "@tests:unit:run"
+        ],
+        "tests:run:with-coverage": [
+            "@tests:integration:run",
+            "@tests:unit:run --coverage --min=100"
+        ],
         "ci:check": [
             "composer validate",
             "@linter:check",

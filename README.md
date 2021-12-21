@@ -37,8 +37,8 @@ X_LISTEN="0.0.0.0:8000" ./bin/mercure
 
 The default JWT key is `!ChangeMe!` with a `HS256` signature. 
 
-You can change these values by changing the environment variables (in `.env.local` or at the OS level): 
-`JWT_SECRET_KEY`, `JWT_ALGORITHM`, `JWT_PUBLIC_KEY` and `JWT_PASSPHRASE` (when using RS512 or ECDSA)
+You can set different values by changing the environment variables (in `.env.local` or at the OS level): 
+`X_LISTEN`, `JWT_SECRET_KEY`, `JWT_ALGORITHM`, `JWT_PUBLIC_KEY` and `JWT_PASSPHRASE` (when using RS512 or ECDSA)
 
 Please refer to the [authorization](https://mercure.rocks/spec#authorization) section of the Mercure specification to authenticate as a publisher and/or a subscriber.
 

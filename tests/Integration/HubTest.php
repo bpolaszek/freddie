@@ -28,7 +28,7 @@ it('works 🎉🥳', function () {
     $process = new Process(['bin/mercure',], dirname(__DIR__, 2), $env);
     $process->start();
 
-    usleep(1500000);
+    usleep(1500000); // Wait for process to actually start
 
     $messages = [];
     Loop::addTimer(0.0, function () use ($endpoint, &$messages) {
@@ -53,6 +53,4 @@ it('works 🎉🥳', function () {
     Loop::addTimer(1, fn() => Loop::stop());
     Loop::run();
     expect($messages[0] ?? null)->toBe('itworks');
-
-    echo $process->getOutput();
 });
