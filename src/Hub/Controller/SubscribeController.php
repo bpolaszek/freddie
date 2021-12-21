@@ -6,11 +6,9 @@ namespace Freddie\Hub\Controller;
 
 use Freddie\Helper\FlatQueryParser;
 use Freddie\Hub\HubControllerInterface;
+use Freddie\Hub\Transport\PHP\PHPTransport;
 use Freddie\Hub\Transport\TransportInterface;
 use Freddie\Message\Update;
-use Freddie\Security\JWT\Extractor\PSR7TokenExtractorInterface;
-use Lexik\Bundle\JWTAuthenticationBundle\Encoder\JWTEncoderInterface;
-use Lexik\Bundle\JWTAuthenticationBundle\Exception\JWTDecodeFailureException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
@@ -36,10 +34,8 @@ final class SubscribeController implements HubControllerInterface
      * @param array<string, mixed> $options
      */
     public function __construct(
-        private TransportInterface $transport,
-        private PSR7TokenExtractorInterface $tokenExtractor,
-        private JWTEncoderInterface $JWTEncoder,
-        array $options,
+        array $options = [],
+        private TransportInterface $transport = new PHPTransport(),
     ) {
         $resolver = new OptionsResolver();
         $resolver->setRequired('allow_anonymous');
@@ -131,19 +127,13 @@ final class SubscribeController implements HubControllerInterface
      */
     private function extractAllowedTopics(ServerRequestInterface $request): ?array
     {
-        $token = $this->tokenExtractor->extract($request);
-        if (null === $token) {
+        $jwt = $request->getAttribute('token');
+        if (null === $jwt) {
             if (!$this->options['allow_anonymous']) {
                 throw new AccessDeniedHttpException('Anonymous subscriptions are not allowed on this hub.');
             }
 
             return null;
-        }
-
-        try {
-            $jwt = $this->JWTEncoder->decode($token);
-        } catch (JWTDecodeFailureException $e) {
-            throw new AccessDeniedHttpException($e->getMessage(), $e);
         }
 
         return $jwt['mercure']['subscribe'] ?? null;

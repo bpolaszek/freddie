@@ -2,29 +2,34 @@
 
 declare(strict_types=1);
 
-namespace Freddie\Tests\Unit\Hub;
+namespace Freddie\Tests\Unit\Hub\Middleware;
 
+use FrameworkX\App;
 use Freddie\Hub\Hub;
+use Freddie\Hub\Middleware\HttpExceptionConverterMiddleware;
 use Psr\Http\Message\ResponseInterface;
 use React\Http\Message\Response;
 use React\Http\Message\ServerRequest;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
+use function Freddie\Tests\handle;
+
 it('converts HttpExceptions to Responses', function () {
-    // Given
-    $hub = new Hub();
+    $expectedResponse = new Response(204);
+    $app = new App(new HttpExceptionConverterMiddleware(), fn () => $expectedResponse);
     $request = new ServerRequest('POST', './well-known/mercure');
 
     // When
-    $response = new Response(204);
-    $next = fn() => $response;
+    $response = handle($app, $request);
 
     // Then
-    expect($hub($request, $next))->toBe($response);
+    expect($response)->toBe($expectedResponse);
+
+    // Given
+    $app = new App(new HttpExceptionConverterMiddleware(), fn () => throw new AccessDeniedHttpException('Nope.'));
 
     // When
-    $next = fn() => throw new AccessDeniedHttpException('Nope.');
-    $response = $hub($request, $next);
+    $response = handle($app, $request);
 
     // Then
     expect($response)->toBeInstanceOf(ResponseInterface::class);

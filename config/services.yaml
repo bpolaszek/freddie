@@ -41,8 +41,11 @@ services:
         factory: ['@Freddie\Hub\Transport\TransportFactory', 'create']
         arguments: ['%transport_dsn%']
 
+    FrameworkX\App:
+        arguments:
+            - '@Freddie\Hub\Middleware\HttpExceptionConverterMiddleware'
+            - '@Freddie\Hub\Middleware\TokenExtractorMiddleware'
+
     Evenement\EventEmitter: ~
     Evenement\EventEmitterInterface: '@Evenement\EventEmitter'
     Clue\React\Redis\Factory: ~
-
-
