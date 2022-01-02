@@ -7,6 +7,9 @@ namespace Freddie\Security\JWT\Configuration;
 use Lcobucci\JWT\Configuration;
 use Lcobucci\JWT\Signer;
 
+/**
+ * @codeCoverageIgnore
+ */
 final class SignerFactory
 {
     public function __construct(

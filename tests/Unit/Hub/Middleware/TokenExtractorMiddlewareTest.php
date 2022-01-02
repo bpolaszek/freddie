@@ -6,7 +6,6 @@ namespace Freddie\Tests\Unit\Hub\Middleware;
 
 use FrameworkX\App;
 use Freddie\Hub\Middleware\TokenExtractorMiddleware;
-use Freddie\Tests\Unit\Hub\Controller\Auth;
 use Lcobucci\JWT\Token;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
@@ -15,7 +14,6 @@ use RingCentral\Psr7\ServerRequest;
 use function Freddie\Tests\create_jwt;
 use function Freddie\Tests\handle;
 use function Freddie\Tests\jwt_config;
-use function json_encode;
 
 it('extracts the token and stores it in an attribute', function () {
     $jwt = create_jwt(['mercure' => ['publish' => ['*']]]);

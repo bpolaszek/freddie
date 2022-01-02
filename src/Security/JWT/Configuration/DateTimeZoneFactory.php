@@ -6,6 +6,9 @@ namespace Freddie\Security\JWT\Configuration;
 
 use DateTimeZone;
 
+/**
+ * @codeCoverageIgnore
+ */
 final class DateTimeZoneFactory
 {
     public function __invoke(): DateTimeZone
