@@ -12,8 +12,14 @@ use function iterator_to_array;
 
 final class ValidationConstraints
 {
+    /**
+     * @var Constraint[]
+     */
     public readonly array $constraints;
 
+    /**
+     * @param iterable<Constraint> $validationConstraints
+     */
     public function __construct(
         iterable $validationConstraints,
     ) {

@@ -128,7 +128,7 @@ final class SubscribeController implements HubControllerInterface
      */
     private function extractAllowedTopics(ServerRequestInterface $request): ?array
     {
-        /** @var UnencryptedToken $jwt */
+        /** @var UnencryptedToken|null $jwt */
         $jwt = $request->getAttribute('token');
         if (null === $jwt) {
             if (!$this->options['allow_anonymous']) {

@@ -57,6 +57,7 @@ final class ConfigurationFactory
 
     private function getSigner(string $algorithm): Signer
     {
+        // @phpstan-ignore-next-line
         return match ($algorithm) {
             'HS256' => new Signer\Hmac\Sha256(),
             'HS384' => new Signer\Hmac\Sha384(),
