@@ -25,7 +25,7 @@ it('works 🎉🥳', function () {
         $env[$key] = $_ENV[$key];
     }
     $endpoint = sprintf('http://%s/.well-known/mercure', $env['X_LISTEN']);
-    $process = new Process(['bin/mercure',], dirname(__DIR__, 2), $env);
+    $process = new Process(['bin/freddie',], dirname(__DIR__, 2), $env);
     $process->start();
 
     usleep(1500000); // Wait for process to actually start

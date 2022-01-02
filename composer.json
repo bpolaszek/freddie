@@ -63,6 +63,7 @@
             "Freddie\\Tests\\": "tests"
         }
     },
+    "bin": ["bin/freddie"],
     "replace": {
         "symfony/polyfill-ctype": "*",
         "symfony/polyfill-iconv": "*",
@@ -70,10 +71,10 @@
     },
     "scripts": {
         "post-install-cmd": [
-            "bin/mercure cache:clear"
+            "bin/freddie cache:clear"
         ],
         "post-update-cmd": [
-            "bin/mercure cache:clear"
+            "bin/freddie cache:clear"
         ],
         "phpstan:analyze": "vendor/bin/phpstan analyse",
         "linter:check": "vendor/bin/phpcs",

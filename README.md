@@ -18,21 +18,21 @@ See what features are covered and what aren't (yet) [here](#feature-coverage).
 PHP 8.1 is required to run the hub.
 
 ```bash
-composer create-project freddie/mercure-x:"~0.1" freddie
+composer create-project freddie/mercure-x:"~0.2" freddie
 cd freddie
 ```
 
 ## Usage
 
 ```bash
-./bin/mercure
+./bin/freddie
 ```
 
 It will start a new Mercure hub on `127.0.0.1:8080`. 
 To change this address, use the `X_LISTEN` environment variable:
 
 ```bash
-X_LISTEN="0.0.0.0:8000" ./bin/mercure
+X_LISTEN="0.0.0.0:8000" ./bin/freddie
 ```
 
 The default JWT key is `!ChangeMe!` with a `HS256` signature. 
@@ -56,7 +56,7 @@ because of concurrency restrictions on the _bolt_ transport.
 To launch the hub with the Redis transport, change the `TRANSPORT_DSN` environment variable:
 
 ```bash
-TRANSPORT_DSN="redis://127.0.0.1:6379" ./bin/mercure
+TRANSPORT_DSN="redis://127.0.0.1:6379" ./bin/freddie
 ```
 
 _Alternatively, you can set this variable into `.env.local`._
@@ -68,7 +68,7 @@ This implementation does not provide SSL nor HTTP2 termination, so you'd better 
 ### Example Nginx configuration
 
 ```nginx
-upstream mercure {
+upstream freddie {
     # Example with a single node
     server 127.0.0.1:8080;
 
@@ -93,7 +93,7 @@ server {
     ssl_ciphers EECDH+CHACHA20:EECDH+AES128:RSA+AES128:EECDH+AES256:RSA+AES256:EECDH+3DES:RSA+3DES:!MD5;
 
     location /.well-known/mercure {
-        proxy_pass http://mercure;
+        proxy_pass http://freddie;
         proxy_read_timeout 24h;
         proxy_http_version 1.1;
         proxy_set_header Connection "";
