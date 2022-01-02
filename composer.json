@@ -17,7 +17,7 @@
         "clue/framework-x": "dev-main",
         "clue/redis-react": "^2.5",
         "doctrine/annotations": "^1.0",
-        "lexik/jwt-authentication-bundle": "^2.14",
+        "lcobucci/jwt": "^4.1",
         "nyholm/dsn": "^2.0",
         "phpdocumentor/reflection-docblock": "^5.3",
         "react/async": "dev-main",

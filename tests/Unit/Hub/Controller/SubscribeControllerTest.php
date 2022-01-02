@@ -15,6 +15,7 @@ use React\Http\Message\ServerRequest;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
+use function Freddie\Tests\create_jwt;
 use function Freddie\Tests\with_token;
 
 it('receives updates and dumps them into the stream', function () {
@@ -56,7 +57,6 @@ it('receives updates and dumps them into the stream', function () {
 
 it('receives private updates when authorized', function () {
     $transport = new PHPTransport(size: 1000);
-    $JWTEncoder = Auth::getJWTEncoder();
     $controller = new SubscribeController(['allow_anonymous' => true], $transport);
     $stream = new ThroughStreamStub();
 
@@ -67,7 +67,7 @@ it('receives private updates when authorized', function () {
     $sensitive = new Message(data: 'S3cr3tC0de', private: true);
     $transport->publish(new Update(['/bar'], $hey)); // Should not be dumped into stream
     $transport->publish(new Update(['/foo'], $hello));
-    $jwt = $JWTEncoder->encode(['mercure' => ['subscribe' => ['/foo']]]);
+    $jwt = create_jwt(['mercure' => ['subscribe' => ['/foo']]]);
     $request = with_token(
         new ServerRequest(
             'GET',
@@ -135,11 +135,10 @@ it('yells when anonymous subscriptions are forbidden and user doesn\'t provide a
 );
 
 it('complains if JWT is invalid', function () {
-    $JWTEncoder = Auth::getJWTEncoder();
     $controller = new SubscribeController(['allow_anonymous' => false]);
 
     // Given
-    $jwt = $JWTEncoder->encode(['mercure' => ['publish' => ['*']]]) . 'foo';
+    $jwt = create_jwt(['mercure' => ['publish' => ['*']]]) . 'foo';
     $request = with_token(
         new ServerRequest(
             'GET',
@@ -158,5 +157,5 @@ it('complains if JWT is invalid', function () {
     // Then
 })->throws(
     AccessDeniedHttpException::class,
-    'Invalid JWT Token'
+    'Error while decoding from Base64Url, invalid base64 characters detected'
 );

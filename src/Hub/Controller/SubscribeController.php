@@ -9,6 +9,7 @@ use Freddie\Hub\HubControllerInterface;
 use Freddie\Hub\Transport\PHP\PHPTransport;
 use Freddie\Hub\Transport\TransportInterface;
 use Freddie\Message\Update;
+use Lcobucci\JWT\UnencryptedToken;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
@@ -127,6 +128,7 @@ final class SubscribeController implements HubControllerInterface
      */
     private function extractAllowedTopics(ServerRequestInterface $request): ?array
     {
+        /** @var UnencryptedToken $jwt */
         $jwt = $request->getAttribute('token');
         if (null === $jwt) {
             if (!$this->options['allow_anonymous']) {
@@ -136,6 +138,6 @@ final class SubscribeController implements HubControllerInterface
             return null;
         }
 
-        return $jwt['mercure']['subscribe'] ?? null;
+        return $jwt->claims()->get('mercure')['subscribe'] ?? null;
     }
 }

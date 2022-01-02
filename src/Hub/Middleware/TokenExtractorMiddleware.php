@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Freddie\Hub\Middleware;
 
+use Freddie\Security\JWT\Configuration\ValidationConstraints;
 use Freddie\Security\JWT\Extractor\ChainTokenExtractor;
 use Freddie\Security\JWT\Extractor\PSR7TokenExtractorInterface;
-use Lexik\Bundle\JWTAuthenticationBundle\Encoder\JWTEncoderInterface;
-use Lexik\Bundle\JWTAuthenticationBundle\Exception\JWTDecodeFailureException;
+use Lcobucci\JWT\Encoding\JoseEncoder;
+use Lcobucci\JWT\Exception;
+use Lcobucci\JWT\Token\Parser;
+use Lcobucci\JWT\Validator;
+use Lcobucci\JWT\Validation\Validator as DefaultValidator;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -15,7 +19,9 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 final class TokenExtractorMiddleware
 {
     public function __construct(
-        private JWTEncoderInterface $JWTEncoder,
+        private Parser $parser = new Parser(new JoseEncoder()),
+        private Validator $validator = new DefaultValidator(),
+        private ValidationConstraints $validationConstraints = new ValidationConstraints([]),
         private PSR7TokenExtractorInterface $tokenExtractor = new ChainTokenExtractor(),
     ) {
     }
@@ -34,8 +40,9 @@ final class TokenExtractorMiddleware
         }
 
         try {
-            $jwt = $this->JWTEncoder->decode($token);
-        } catch (JWTDecodeFailureException $e) {
+            $jwt = $this->parser->parse($token);
+            $this->validator->assert($jwt, ...$this->validationConstraints->constraints);
+        } catch (Exception $e) {
             throw new AccessDeniedHttpException($e->getMessage());
         }
 

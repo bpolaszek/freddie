@@ -19,7 +19,9 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Uid\Ulid;
 
+use function Freddie\Tests\create_jwt;
 use function Freddie\Tests\handle;
+use function Freddie\Tests\jwt_config;
 use function Freddie\Tests\with_token;
 
 it('publishes updates to the hub', function (
@@ -28,11 +30,13 @@ it('publishes updates to the hub', function (
     ResponseInterface $expectedResponse,
     ?Update $expectedUpdate
 ) {
-    $JWTEncoder = Auth::getJWTEncoder();
     $transport = new PHPTransport(size: 1);
     $controller = new PublishController($transport);
     $app = new App(
-        new TokenExtractorMiddleware($JWTEncoder),
+        new TokenExtractorMiddleware(
+            jwt_config()->parser(),
+            jwt_config()->validator(),
+        ),
         new HttpExceptionConverterMiddleware(),
         $controller,
     );
@@ -41,7 +45,7 @@ it('publishes updates to the hub', function (
     $updates->setAccessible(true);
 
     // Given
-    $jwt = $JWTEncoder->encode(['mercure' => ['publish' => $allowedTopics]]);
+    $jwt = create_jwt(['mercure' => ['publish' => $allowedTopics]]);
     $request = new ServerRequest(
         'POST',
         '/.well-known/mercure',
@@ -101,11 +105,10 @@ it('complains when no jwt is provided', function () {
 );
 
 it('complains when JWT is invalid', function () {
-    $JWTEncoder = Auth::getJWTEncoder();
     $controller = new PublishController();
 
     // Given
-    $jwt = $JWTEncoder->encode(['mercure' => ['publish' => ['*']]]) . 'foo';
+    $jwt = create_jwt(['mercure' => ['publish' => ['*']]]) . 'foo';
     $request = with_token(
         new ServerRequest(
             'POST',
@@ -123,15 +126,14 @@ it('complains when JWT is invalid', function () {
     $controller($request);
 })->throws(
     AccessDeniedHttpException::class,
-    'Invalid JWT Token'
+    'Error while decoding from Base64Url, invalid base64 characters detected'
 );
 
 it('complains if JWT does not contain a mercure.publish claim', function () {
-    $JWTEncoder = Auth::getJWTEncoder();
     $controller = new PublishController();
 
     // Given
-    $jwt = $JWTEncoder->encode([]);
+    $jwt = create_jwt([]);
     $request = with_token(
         new ServerRequest(
             'POST',
@@ -173,11 +175,10 @@ it('yells when no topic is provided', function () {
 );
 
 it('yells when update cannot be published', function () {
-    $JWTEncoder = Auth::getJWTEncoder();
     $controller = new PublishController();
 
     // Given
-    $jwt = $JWTEncoder->encode(['mercure' => ['publish' => ['/bar']]]);
+    $jwt = create_jwt(['mercure' => ['publish' => ['/bar']]]);
     $request = with_token(
         new ServerRequest(
             'POST',

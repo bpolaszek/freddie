@@ -13,9 +13,13 @@ use function file_get_contents;
 
 /**
  * @internal
+ * @deprecated
  */
 final class Auth
 {
+    /**
+     * @deprecated
+     */
     public static function getJWTEncoder(int $ttl = 3600, int $clockSkew = 0): JWTEncoderInterface
     {
         static $encoder;

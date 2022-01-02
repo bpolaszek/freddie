@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Freddie\Tests\Integration;
 
-use Freddie\Tests\Unit\Hub\Controller\Auth;
 use Clue\React\EventSource\EventSource;
 use Clue\React\EventSource\MessageEvent;
 use React\EventLoop\Loop;
@@ -13,6 +12,7 @@ use Symfony\Component\Process\Process;
 
 use function dirname;
 use function explode;
+use function Freddie\Tests\create_jwt;
 use function sprintf;
 
 it('works 🎉🥳', function () {
@@ -39,9 +39,8 @@ it('works 🎉🥳', function () {
         });
     });
     Loop::addTimer(0.05, function () use ($endpoint) {
-        $JWTEncoder = Auth::getJWTEncoder();
         $publisher = HttpClient::create();
-        $jwt = $JWTEncoder->encode(['mercure' => ['publish' => ['*']]]);
+        $jwt = create_jwt(['mercure' => ['publish' => ['*']]]);
         $publisher->request('POST', $endpoint, [
             'body' => 'topic=/foo&data=itworks',
             'headers' => [
