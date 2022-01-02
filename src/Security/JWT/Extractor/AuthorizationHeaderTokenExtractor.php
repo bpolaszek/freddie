@@ -8,8 +8,11 @@ use Psr\Http\Message\ServerRequestInterface;
 
 final class AuthorizationHeaderTokenExtractor implements PSR7TokenExtractorInterface
 {
-    private string $name = 'Authorization';
-    private string $prefix = 'Bearer';
+    public function __construct(
+        private string $name = 'Authorization',
+        private string $prefix = 'Bearer',
+    ) {
+    }
 
     public function extract(ServerRequestInterface $request): ?string
     {
