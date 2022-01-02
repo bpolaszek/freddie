@@ -47,7 +47,8 @@ function jwt_config(): Configuration
     );
 }
 
-function create_jwt(array $claims): string {
+function create_jwt(array $claims): string
+{
     $builder = jwt_config()->builder();
     foreach ($claims as $key => $value) {
         $builder = $builder->withClaim($key, $value);

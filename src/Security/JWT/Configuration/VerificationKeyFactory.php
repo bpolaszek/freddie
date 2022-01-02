@@ -18,5 +18,4 @@ final class VerificationKeyFactory
     {
         return $this->configuration->verificationKey();
     }
-
 }

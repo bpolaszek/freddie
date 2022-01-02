@@ -18,5 +18,4 @@ final class SignerFactory
     {
         return $this->configuration->signer();
     }
-
 }

@@ -7,7 +7,7 @@ namespace Freddie\Security\JWT\Configuration;
 use InvalidArgumentException;
 use Lcobucci\JWT\Configuration;
 use Lcobucci\JWT\Signer;
-use function base64_decode;
+
 use function is_readable;
 
 final class ConfigurationFactory
