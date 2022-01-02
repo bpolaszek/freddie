@@ -10,6 +10,7 @@ use Freddie\Hub\Transport\PHP\PHPTransport;
 use Freddie\Hub\Transport\TransportInterface;
 use Freddie\Message\Message;
 use Freddie\Message\Update;
+use Lcobucci\JWT\UnencryptedToken;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
@@ -76,10 +77,11 @@ final class PublishController implements HubControllerInterface
      */
     private function extractAllowedTopics(ServerRequestInterface $request): array
     {
+        /** @var UnencryptedToken $jwt */
         $jwt = $request->getAttribute('token')
             ?? throw new AccessDeniedHttpException('You must be authenticated to publish on this hub.');
 
-        return $jwt['mercure']['publish']
+        return $jwt->claims()->get('mercure')['publish']
             ?? throw new AccessDeniedHttpException('Missing mercure.publish claim.');
     }
 }

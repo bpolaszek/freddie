@@ -1,6 +1,9 @@
 parameters:
     env(TRANSPORT_DSN): 'php://default'
     env(ALLOW_ANONYMOUS): true
+    env(JWT_SECRET_KEY): "!ChangeMe!"
+    env(JWT_PUBLIC_KEY): ~
+    env(JWT_ALGORITHM): "HS256"
     transport_dsn: '%env(TRANSPORT_DSN)%'
     allow_anonymous: '%env(bool:ALLOW_ANONYMOUS)%'
 
@@ -10,6 +13,8 @@ services:
             tags: ['mercure.controller']
         Freddie\Hub\Transport\TransportFactoryInterface:
             tags: ['mercure.transport_factory']
+        Lcobucci\JWT\Validation\Constraint:
+            tags: ['lcobucci.jwt.validation_constraint']
 
     _defaults:
         autowire: true
@@ -41,6 +46,10 @@ services:
         factory: ['@Freddie\Hub\Transport\TransportFactory', 'create']
         arguments: ['%transport_dsn%']
 
+    Freddie\Security\JWT\Configuration\ValidationConstraints:
+        arguments:
+            - !tagged_iterator lcobucci.jwt.validation_constraint
+
     FrameworkX\App:
         arguments:
             - '@Freddie\Hub\Middleware\HttpExceptionConverterMiddleware'
@@ -49,3 +58,40 @@ services:
     Evenement\EventEmitter: ~
     Evenement\EventEmitterInterface: '@Evenement\EventEmitter'
     Clue\React\Redis\Factory: ~
+
+    Lcobucci\JWT\Configuration:
+        factory: '@Freddie\Security\JWT\Configuration\ConfigurationFactory'
+        arguments:
+            - '%env(JWT_ALGORITHM)%'
+            - '%env(resolve:JWT_SECRET_KEY)%'
+            - '%env(string:default::resolve:JWT_PUBLIC_KEY)%'
+            - '%env(string:default::JWT_PASSPHRASE)%'
+
+    Lcobucci\JWT\Parser:
+        factory: ['@Lcobucci\JWT\Configuration', 'parser']
+
+    Lcobucci\JWT\Validator:
+        factory: ['@Lcobucci\JWT\Configuration', 'validator']
+
+    jwt.verification_key:
+        class: Lcobucci\JWT\Signer\Key
+        factory: '@Freddie\Security\JWT\Configuration\VerificationKeyFactory'
+
+    DateTimeZone:
+        class: DateTimeZone
+        factory: '@Freddie\Security\JWT\Configuration\DateTimeZoneFactory'
+
+    Lcobucci\Clock\SystemClock:
+        arguments:
+            - '@DateTimeZone'
+
+    Lcobucci\Clock\Clock: '@Lcobucci\Clock\SystemClock'
+
+    Lcobucci\JWT\Signer:
+        factory: '@Freddie\Security\JWT\Configuration\SignerFactory'
+
+    Lcobucci\JWT\Validation\Constraint\LooseValidAt: ~
+    Lcobucci\JWT\Validation\Constraint\SignedWith:
+        arguments:
+            $key: '@jwt.verification_key'
+
