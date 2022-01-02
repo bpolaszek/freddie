@@ -46,8 +46,8 @@ You can override relevant env vars in your `.env.local`
 and services in your `config/services.yaml` as usual.
 
 ⚠️ **Freddie** uses its own routing/authentication system (because of async / event loop). 
-The controllers it exposes cannot be imported in your `routes.yaml`, and get out of your  `security.yaml` scope.
 
+The controllers it exposes cannot be imported in your `routes.yaml`, and get out of your  `security.yaml` scope.
 
 ## Usage
 
@@ -71,10 +71,18 @@ You can set different values by changing the environment variables (in `.env.loc
 
 Please refer to the [authorization](https://mercure.rocks/spec#authorization) section of the Mercure specification to authenticate as a publisher and/or a subscriber.
 
-### Redis transport
+### PHP Transport (default)
 
-By default, the hub will run as a simple event-dispatcher, in a single PHP process. 
-It can fit common needs for a basic usage, but is not scalable (opening another process won't share the same event emitter).
+By default, the hub will run as a simple event-dispatcher, in a single PHP process.
+
+It can fit common needs for a basic usage, but using this transport prevents scalability,
+as opening another process won't share the same event emitter.
+
+It's still prefectly usable as soon as :
+- You don't expect more than a few hundreds updates per second
+- Your application is served from a single server.
+
+### Redis transport
 
 On the other hand, you can launch the hub on **multiple ports** and/or **multiple servers** with a Redis transport
 (as soon as they share the same Redis instance), and optionally use a load-balancer to distribute the traffic.
