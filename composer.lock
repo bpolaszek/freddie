@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "414602a649e069d55914f87b1714a23e",
+    "content-hash": "26d27facd803801f28b1172f7a70dbcf",
     "packages": [
         {
             "name": "bentools/querystring",

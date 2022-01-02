@@ -17,10 +17,37 @@ See what features are covered and what aren't (yet) [here](#feature-coverage).
 
 PHP 8.1 is required to run the hub.
 
+### As a standalone Mercure hub
+
 ```bash
-composer create-project freddie/mercure-x:"~0.2" freddie
-cd freddie
+composer create-project freddie/mercure-x freddie && cd freddie
+bin/freddie
 ```
+
+This will start a Freddie instance on `127.0.0.1:8080`, with anonymous subscriptions enabled.
+
+You can publish updates to the hub by generating a valid JWT signed with the `!ChangeMe!` key with `HMAC SHA256` algorithm.
+
+To change these values, see [Security](#security).
+
+### As a bundle of your existing Symfony application
+
+```bash
+composer req freddie/mercure-x
+```
+
+You can then start the hub by doing:
+
+```bash
+bin/console freddie:serve
+```
+
+You can override relevant env vars in your `.env.local` 
+and services in your `config/services.yaml` as usual.
+
+⚠️ **Freddie** uses its own routing/authentication system (because of async / event loop). 
+The controllers it exposes cannot be imported in your `routes.yaml`, and get out of your  `security.yaml` scope.
+
 
 ## Usage
 
@@ -34,6 +61,8 @@ To change this address, use the `X_LISTEN` environment variable:
 ```bash
 X_LISTEN="0.0.0.0:8000" ./bin/freddie
 ```
+
+### Security 
 
 The default JWT key is `!ChangeMe!` with a `HS256` signature. 
 

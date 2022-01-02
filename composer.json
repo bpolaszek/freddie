@@ -24,7 +24,7 @@
         "rize/uri-template": "^0.3.4",
         "symfony/console": "6.0.*",
         "symfony/dotenv": "6.0.*",
-        "symfony/flex": "^1.17",
+        "symfony/flex": "^1.17|^2",
         "symfony/framework-bundle": "6.0.*",
         "symfony/options-resolver": "6.0.*",
         "symfony/property-access": "6.0.*",
@@ -64,11 +64,6 @@
         }
     },
     "bin": ["bin/freddie"],
-    "replace": {
-        "symfony/polyfill-ctype": "*",
-        "symfony/polyfill-iconv": "*",
-        "symfony/polyfill-php72": "*"
-    },
     "scripts": {
         "post-install-cmd": [
             "bin/freddie cache:clear"
