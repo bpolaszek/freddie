@@ -14,3 +14,11 @@ it('extracts token from cookies', function () {
     ]);
     expect($extractor->extract($request))->toBe('foobar');
 });
+
+it('is compliant with the split-cookie strategy', function () {
+    $extractor = new CookieTokenExtractor(['jwt_hp', 'jwt_s']);
+    $request = new ServerRequest('GET', '/.well-known/mercure', [
+        'Cookie' => 'foo=bar; jwt_hp=foobar; bar=foo; jwt_s=signed',
+    ]);
+    expect($extractor->extract($request))->toBe('foobar.signed');
+});
