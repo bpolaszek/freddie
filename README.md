@@ -48,6 +48,8 @@ and services in your `config/services.yaml` as usual.
 Then, you can inject `Freddie\Hub\HubInterface` in your services so that you can call `$hub->publish($update)`,
 or listening to dispatched updates in a CLI context 👍
 
+Keep in mind this only works when using the Redis transport.
+
 ⚠️ **Freddie** uses its own routing/authentication system (because of async / event loop). 
 
 The controllers it exposes cannot be imported in your `routes.yaml`, and get out of your  `security.yaml` scope.
