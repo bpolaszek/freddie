@@ -6,8 +6,7 @@ namespace Freddie\Hub\Controller;
 
 use Freddie\Helper\FlatQueryParser;
 use Freddie\Hub\HubControllerInterface;
-use Freddie\Hub\Transport\PHP\PHPTransport;
-use Freddie\Hub\Transport\TransportInterface;
+use Freddie\Hub\HubInterface;
 use Freddie\Message\Update;
 use Lcobucci\JWT\UnencryptedToken;
 use Psr\Http\Message\ResponseInterface;
@@ -18,7 +17,6 @@ use React\Stream\ThroughStream;
 use React\Stream\WritableStreamInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\OptionsResolver\OptionsResolver;
 
 use function Freddie\extract_last_event_id;
 use function BenTools\QueryString\query_string;
@@ -26,22 +24,13 @@ use function React\Async\async;
 
 final class SubscribeController implements HubControllerInterface
 {
-    /**
-     * @var array<string, mixed>
-     */
-    private array $options;
+    private HubInterface $hub;
 
-    /**
-     * @param array<string, mixed> $options
-     */
-    public function __construct(
-        array $options = [],
-        private TransportInterface $transport = new PHPTransport(),
-    ) {
-        $resolver = new OptionsResolver();
-        $resolver->setRequired('allow_anonymous');
-        $resolver->setAllowedTypes('allow_anonymous', 'bool');
-        $this->options = $resolver->resolve($options);
+    public function setHub(HubInterface $hub): self
+    {
+        $this->hub = $hub;
+
+        return $this;
     }
 
     /**
@@ -71,7 +60,7 @@ final class SubscribeController implements HubControllerInterface
         if (null !== $lastEventId) {
             async(
                 function () use ($lastEventId, $stream, $subscribedTopics, $allowedTopics) {
-                    foreach ($this->transport->reconciliate($lastEventId) as $update) {
+                    foreach ($this->hub->reconciliate($lastEventId) as $update) {
                         $this->sendUpdate($update, $stream, $subscribedTopics, $allowedTopics);
                     }
                 }
@@ -80,7 +69,7 @@ final class SubscribeController implements HubControllerInterface
 
         async(
             function () use ($stream, $subscribedTopics, $allowedTopics) {
-                $this->transport->subscribe(function (Update $update) use ($stream, $subscribedTopics, $allowedTopics) {
+                $this->hub->subscribe(function (Update $update) use ($stream, $subscribedTopics, $allowedTopics) {
                     $this->sendUpdate($update, $stream, $subscribedTopics, $allowedTopics);
                 });
             }
@@ -103,7 +92,7 @@ final class SubscribeController implements HubControllerInterface
         array $subscribedTopics,
         ?array $allowedTopics,
     ): void {
-        if (!$update->canBeReceived($subscribedTopics, $allowedTopics, $this->options['allow_anonymous'])) {
+        if (!$update->canBeReceived($subscribedTopics, $allowedTopics, $this->hub->getOption('allow_anonymous'))) {
             return;
         }
 
@@ -131,7 +120,7 @@ final class SubscribeController implements HubControllerInterface
         /** @var UnencryptedToken|null $jwt */
         $jwt = $request->getAttribute('token');
         if (null === $jwt) {
-            if (!$this->options['allow_anonymous']) {
+            if (!$this->hub->getOption('allow_anonymous')) {
                 throw new AccessDeniedHttpException('Anonymous subscriptions are not allowed on this hub.');
             }
 

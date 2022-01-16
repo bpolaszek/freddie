@@ -11,5 +11,6 @@ interface HubControllerInterface
 {
     public function getMethod(): string;
     public function getRoute(): string;
+    public function setHub(HubInterface $hub): self;
     public function __invoke(ServerRequestInterface $request): ResponseInterface;
 }

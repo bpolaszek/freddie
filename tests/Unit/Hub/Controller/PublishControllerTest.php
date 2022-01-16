@@ -6,6 +6,7 @@ namespace Freddie\Tests\Unit\Hub\Controller;
 
 use FrameworkX\App;
 use Freddie\Hub\Controller\PublishController;
+use Freddie\Hub\Hub;
 use Freddie\Hub\Middleware\HttpExceptionConverterMiddleware;
 use Freddie\Hub\Middleware\TokenExtractorMiddleware;
 use Freddie\Hub\Transport\PHP\PHPTransport;
@@ -31,7 +32,7 @@ it('publishes updates to the hub', function (
     ?Update $expectedUpdate
 ) {
     $transport = new PHPTransport(size: 1);
-    $controller = new PublishController($transport);
+    $controller = new PublishController();
     $app = new App(
         new TokenExtractorMiddleware(
             jwt_config()->parser(),
@@ -40,6 +41,8 @@ it('publishes updates to the hub', function (
         new HttpExceptionConverterMiddleware(),
         $controller,
     );
+    $hub = new Hub($app, $transport);
+    $controller->setHub($hub);
     $transportRefl = new ReflectionClass($transport);
     $updates = $transportRefl->getProperty('updates');
     $updates->setAccessible(true);

@@ -10,7 +10,9 @@ use Evenement\EventEmitter;
 use Evenement\EventEmitterInterface;
 use FrameworkX\App;
 use Freddie\Hub\Controller\SubscribeController;
+use Freddie\Hub\Hub;
 use Freddie\Hub\HubControllerInterface;
+use Freddie\Hub\HubInterface;
 use Freddie\Hub\Middleware\HttpExceptionConverterMiddleware;
 use Freddie\Hub\Middleware\TokenExtractorMiddleware;
 use Freddie\Hub\Transport\TransportFactory;
@@ -45,7 +47,7 @@ const JWT_CONSTRAINT = 'lcobucci.jwt.validation_constraint';
 return static function (ContainerConfigurator $container) {
     $params = $container->parameters();
     $params->set('env(TRANSPORT_DSN)', 'php://default');
-    $params->set('env(ALLOW_ANONYMOUS)', true);
+    $params->set('env(ALLOW_ANONYMOUS)', Hub::DEFAULT_OPTIONS['allow_anonymous']);
     $params->set('env(JWT_SECRET_KEY)', '!ChangeMe!');
     $params->set('env(JWT_PUBLIC_KEY)', null);
     $params->set('env(JWT_ALGORITHM)', 'HS256');
@@ -86,8 +88,7 @@ return static function (ContainerConfigurator $container) {
         ]);
 
     $services
-        ->set(SubscribeController::class)
-        ->arg('$options', ['allow_anonymous' => param('allow_anonymous')]);
+        ->set(SubscribeController::class);
 
     $services
         ->alias(PSR7TokenExtractorInterface::class, ChainTokenExtractor::class);
@@ -100,6 +101,12 @@ return static function (ContainerConfigurator $container) {
         ->set(TransportInterface::class)
         ->factory([service(TransportFactory::class), 'create'])
         ->arg('$dsn', param('transport_dsn'));
+
+    $services
+        ->set(Hub::class)
+        ->arg('$options', ['allow_anonymous' => param('allow_anonymous')]);
+
+    $services->alias(HubInterface::class, Hub::class);
 
     $services
         ->set(ValidationConstraints::class)

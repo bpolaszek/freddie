@@ -6,8 +6,7 @@ namespace Freddie\Hub\Controller;
 
 use Freddie\Helper\FlatQueryParser;
 use Freddie\Hub\HubControllerInterface;
-use Freddie\Hub\Transport\PHP\PHPTransport;
-use Freddie\Hub\Transport\TransportInterface;
+use Freddie\Hub\HubInterface;
 use Freddie\Message\Message;
 use Freddie\Message\Update;
 use Lcobucci\JWT\UnencryptedToken;
@@ -24,9 +23,13 @@ use function Freddie\nullify;
 
 final class PublishController implements HubControllerInterface
 {
-    public function __construct(
-        private TransportInterface $transport = new PHPTransport(),
-    ) {
+    private HubInterface $hub;
+
+    public function setHub(HubInterface $hub): self
+    {
+        $this->hub = $hub;
+
+        return $this;
     }
 
     /**
@@ -66,7 +69,7 @@ final class PublishController implements HubControllerInterface
             throw new AccessDeniedHttpException('Your rights are not sufficient to publish this update.');
         }
 
-        $this->transport->publish($update);
+        $this->hub->publish($update);
 
         return new Response(201, body: (string) $update->message->id);
     }

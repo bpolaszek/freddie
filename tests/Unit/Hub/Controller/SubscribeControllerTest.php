@@ -6,6 +6,7 @@ namespace Freddie\Tests\Unit\Hub\Controller;
 
 use FrameworkX\App;
 use Freddie\Hub\Controller\SubscribeController;
+use Freddie\Hub\Hub;
 use Freddie\Hub\Middleware\HttpExceptionConverterMiddleware;
 use Freddie\Hub\Transport\PHP\PHPTransport;
 use Freddie\Message\Message;
@@ -20,11 +21,8 @@ use function Freddie\Tests\with_token;
 
 it('receives updates and dumps them into the stream', function () {
     $transport = new PHPTransport(size: 1000);
-    $controller = new SubscribeController(['allow_anonymous' => true], $transport);
-    $app = new App(
-        new HttpExceptionConverterMiddleware(),
-        $controller,
-    );
+    $controller = new SubscribeController();
+    $controller->setHub(new Hub(transport: $transport));
     $stream = new ThroughStreamStub();
 
     // Given
@@ -57,7 +55,8 @@ it('receives updates and dumps them into the stream', function () {
 
 it('receives private updates when authorized', function () {
     $transport = new PHPTransport(size: 1000);
-    $controller = new SubscribeController(['allow_anonymous' => true], $transport);
+    $controller = new SubscribeController();
+    $controller->setHub(new Hub(transport: $transport));
     $stream = new ThroughStreamStub();
 
     // Given
@@ -97,7 +96,8 @@ it('receives private updates when authorized', function () {
 });
 
 it('yells if user doesn\'t subscribe to at least one topic', function () {
-    $controller = new SubscribeController(['allow_anonymous' => true]);
+    $controller = new SubscribeController();
+    $controller->setHub(new Hub(options: ['allow_anonymous' => true]));
 
     // Given
     $request = new ServerRequest(
@@ -116,7 +116,8 @@ it('yells if user doesn\'t subscribe to at least one topic', function () {
 );
 
 it('yells when anonymous subscriptions are forbidden and user doesn\'t provide a JWT', function () {
-    $controller = new SubscribeController(['allow_anonymous' => false]);
+    $controller = new SubscribeController();
+    $controller->setHub(new Hub(options: ['allow_anonymous' => false]));
 
     // Given
     $request = new ServerRequest(
@@ -135,7 +136,8 @@ it('yells when anonymous subscriptions are forbidden and user doesn\'t provide a
 );
 
 it('complains if JWT is invalid', function () {
-    $controller = new SubscribeController(['allow_anonymous' => false]);
+    $controller = new SubscribeController();
+    $controller->setHub(new Hub(options: ['allow_anonymous' => false]));
 
     // Given
     $jwt = create_jwt(['mercure' => ['publish' => ['*']]]) . 'foo';

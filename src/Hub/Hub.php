@@ -6,18 +6,44 @@ namespace Freddie\Hub;
 
 use FrameworkX\App;
 use Freddie\Hub\Middleware\HttpExceptionConverterMiddleware;
+use Freddie\Hub\Transport\PHP\PHPTransport;
+use Freddie\Hub\Transport\TransportInterface;
+use Freddie\Message\Update;
+use Generator;
+use InvalidArgumentException;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
-final class Hub
+use function array_key_exists;
+use function sprintf;
+
+final class Hub implements HubInterface
 {
+    public const DEFAULT_OPTIONS = [
+        'allow_anonymous' => true,
+    ];
+
+    /**
+     * @var array<string, mixed>
+     */
+    private array $options;
+
     /**
      * @codeCoverageIgnore
+     * @param array<string, mixed> $options
      * @param iterable<HubControllerInterface> $controllers
      */
     public function __construct(
         private App $app = new App(new HttpExceptionConverterMiddleware()),
+        private TransportInterface $transport = new PHPTransport(),
+        array $options = [],
         iterable $controllers = [],
     ) {
+        $resolver = new OptionsResolver();
+        $resolver->setDefaults(self::DEFAULT_OPTIONS);
+        $resolver->setAllowedTypes('allow_anonymous', 'bool');
+        $this->options = $resolver->resolve($options);
         foreach ($controllers as $controller) {
+            $controller->setHub($this);
             $method = $controller->getMethod();
             $route = $controller->getRoute();
             $this->app->{$method}($route, $controller);
@@ -30,5 +56,29 @@ final class Hub
     public function run(): void
     {
         $this->app->run();
+    }
+
+    public function publish(Update $update): void
+    {
+        $this->transport->publish($update);
+    }
+
+    public function subscribe(callable $callback): void
+    {
+        $this->transport->subscribe($callback);
+    }
+
+    public function reconciliate(string $lastEventID): Generator
+    {
+        return $this->transport->reconciliate($lastEventID);
+    }
+
+    public function getOption(string $name): mixed
+    {
+        if (!array_key_exists($name, $this->options)) {
+            throw new InvalidArgumentException(sprintf('Invalid option `%s`.', $name));
+        }
+
+        return $this->options[$name];
     }
 }
