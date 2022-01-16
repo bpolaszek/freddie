@@ -9,8 +9,10 @@ use Freddie\Hub\Transport\TransportInterface;
 use Freddie\Message\Update;
 use Generator;
 use React\EventLoop\Loop;
+use React\Promise\PromiseInterface;
 
 use function React\Async\await;
+use function React\Promise\resolve;
 
 final class RedisTransport implements TransportInterface
 {
@@ -35,12 +37,14 @@ final class RedisTransport implements TransportInterface
         });
     }
 
-    public function publish(Update $update): void
+    public function publish(Update $update): PromiseInterface
     {
         $this->init();
         $payload = $this->serializer->serialize($update);
-        $this->redis->publish($this->channel, $payload); // @phpstan-ignore-line
-        $this->store($update);
+
+        return $this->redis->publish($this->channel, $payload) // @phpstan-ignore-line
+            ->then(fn() => $this->store($update))
+            ->then(fn() => $update);
     }
 
     public function reconciliate(string $lastEventID): Generator
@@ -63,14 +67,14 @@ final class RedisTransport implements TransportInterface
         }
     }
 
-    private function store(Update $update): void
+    private function store(Update $update): PromiseInterface
     {
         $this->init();
         if ($this->size <= 0) {
-            return;
+            return resolve();
         }
 
-        $this->redis->rpush($this->storageKey, $this->serializer->serialize($update)); // @phpstan-ignore-line
+        return $this->redis->rpush($this->storageKey, $this->serializer->serialize($update)); // @phpstan-ignore-line
     }
 
     private function init(): void

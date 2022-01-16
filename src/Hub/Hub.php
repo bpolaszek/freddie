@@ -11,6 +11,8 @@ use Freddie\Hub\Transport\TransportInterface;
 use Freddie\Message\Update;
 use Generator;
 use InvalidArgumentException;
+use React\EventLoop\Loop;
+use React\Promise\PromiseInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 use function array_key_exists;
@@ -26,6 +28,8 @@ final class Hub implements HubInterface
      * @var array<string, mixed>
      */
     private array $options;
+
+    private bool $started = false;
 
     /**
      * @codeCoverageIgnore
@@ -55,12 +59,20 @@ final class Hub implements HubInterface
      */
     public function run(): void
     {
+        $this->started = true;
         $this->app->run();
     }
 
-    public function publish(Update $update): void
+    public function publish(Update $update): PromiseInterface
     {
-        $this->transport->publish($update);
+        return $this->transport->publish($update)
+            ->then(function (Update $update) {
+                if (false === $this->started) {
+                    Loop::stop();
+                }
+
+                return $update;
+            });
     }
 
     public function subscribe(callable $callback): void

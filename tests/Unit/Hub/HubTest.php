@@ -10,17 +10,21 @@ use Freddie\Message\Message;
 use Freddie\Message\Update;
 use Generator;
 use InvalidArgumentException;
+use React\Promise\PromiseInterface;
 use Symfony\Component\Uid\Ulid;
 
 use function func_get_args;
 use function iterator_to_array;
+use function React\Promise\resolve;
 
 it('exposes its transport methods', function () {
     $transport = new class () implements TransportInterface {
         public array $called = [];
-        public function publish(Update $update): void
+        public function publish(Update $update): PromiseInterface
         {
             $this->called['publish'] = func_get_args();
+
+            return resolve($update);
         }
 
         public function subscribe(callable $callback): void

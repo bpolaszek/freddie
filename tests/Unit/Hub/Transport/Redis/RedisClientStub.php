@@ -8,13 +8,14 @@ use ArrayObject;
 use Clue\React\Redis\Client;
 use Evenement\EventEmitter;
 use Evenement\EventEmitterInterface;
-use Evenement\EventEmitterTrait;
 use Pest\Exceptions\ShouldNotHappen;
+use React\Promise\PromiseInterface;
 
 use function abs;
 use function array_splice;
 use function count;
 use function React\Async\async;
+use function React\Promise\resolve;
 
 final class RedisClientStub implements Client
 {
@@ -31,16 +32,20 @@ final class RedisClientStub implements Client
         $this->subscribedChannels[] = $channel;
     }
 
-    public function publish(string $channel, string $payload): void
+    public function publish(string $channel, string $payload): PromiseInterface
     {
         $this->emit('message', [$channel, $payload]);
+
+        return resolve(true);
     }
 
-    public function rpush(string $key, string ...$items): void
+    public function rpush(string $key, string ...$items): PromiseInterface
     {
         foreach ($items as $item) {
             $this->storage[$key][] = $item;
         }
+
+        return resolve(true);
     }
 
     public function lrange(string $key, int $from, int $to)

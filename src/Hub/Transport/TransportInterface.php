@@ -6,12 +6,16 @@ namespace Freddie\Hub\Transport;
 
 use Freddie\Message\Update;
 use Generator;
+use React\Promise\PromiseInterface;
 
 interface TransportInterface
 {
     public const EARLIEST = 'earliest';
 
-    public function publish(Update $update): void;
+    /**
+     * @return PromiseInterface<Update>
+     */
+    public function publish(Update $update): PromiseInterface;
 
     public function subscribe(callable $callback): void;
 
