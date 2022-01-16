@@ -75,7 +75,7 @@ final class SubscribeController implements HubControllerInterface
                         $this->sendUpdate($update, $stream, $subscribedTopics, $allowedTopics);
                     }
                 }
-            );
+            )();
         }
 
         async(
@@ -84,7 +84,7 @@ final class SubscribeController implements HubControllerInterface
                     $this->sendUpdate($update, $stream, $subscribedTopics, $allowedTopics);
                 });
             }
-        );
+        )();
 
         return new Response(
             200,

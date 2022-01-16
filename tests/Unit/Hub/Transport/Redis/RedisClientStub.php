@@ -54,12 +54,12 @@ final class RedisClientStub implements Client
 
         $length -= $from;
 
-        return async(fn () => array_splice($items, $firstIndex, $length));
+        return async(fn () => array_splice($items, $firstIndex, $length))();
     }
 
     public function ltrim(string $key, int $from, int $to)
     {
-        return async(fn () => $this->lrange($key, $from, $to))
+        return async(fn () => $this->lrange($key, $from, $to))()
             ->then(fn (array $items) => $this->storage[$key] = $items);
     }
 
