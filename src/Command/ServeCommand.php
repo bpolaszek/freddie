@@ -14,7 +14,9 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use function sprintf;
 
 #[AsCommand(
-    name: 'serve'
+    name: 'freddie:serve',
+    description: 'Start Freddie server, the PHP Mercure Hub.',
+    aliases: ['serve'],
 )]
 final class ServeCommand extends Command
 {

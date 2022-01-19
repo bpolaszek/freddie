@@ -9,9 +9,11 @@ use Freddie\Message\Update;
 use Evenement\EventEmitter;
 use Evenement\EventEmitterInterface;
 use Generator;
+use React\Promise\PromiseInterface;
 
 use function array_shift;
 use function count;
+use function React\Promise\resolve;
 
 final class PHPTransport implements TransportInterface
 {
@@ -26,10 +28,12 @@ final class PHPTransport implements TransportInterface
     ) {
     }
 
-    public function publish(Update $update): void
+    public function publish(Update $update): PromiseInterface
     {
         $this->store($update);
         $this->eventEmitter->emit('mercureUpdate', [$update]);
+
+        return resolve($update);
     }
 
     public function subscribe(callable $callback): void

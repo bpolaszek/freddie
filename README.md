@@ -17,10 +17,42 @@ See what features are covered and what aren't (yet) [here](#feature-coverage).
 
 PHP 8.1 is required to run the hub.
 
+### As a standalone Mercure hub
+
 ```bash
-composer create-project freddie/mercure-x:"~0.2" freddie
-cd freddie
+composer create-project freddie/mercure-x freddie && cd freddie
+bin/freddie
 ```
+
+This will start a Freddie instance on `127.0.0.1:8080`, with anonymous subscriptions enabled.
+
+You can publish updates to the hub by generating a valid JWT signed with the `!ChangeMe!` key with `HMAC SHA256` algorithm.
+
+To change these values, see [Security](#security).
+
+### As a bundle of your existing Symfony application
+
+```bash
+composer req freddie/mercure-x
+```
+
+You can then start the hub by doing:
+
+```bash
+bin/console freddie:serve
+```
+
+You can override relevant env vars in your `.env.local` 
+and services in your `config/services.yaml` as usual.
+
+Then, you can inject `Freddie\Hub\HubInterface` in your services so that you can call `$hub->publish($update)`,
+or listening to dispatched updates in a CLI context 👍
+
+Keep in mind this only works when using the Redis transport.
+
+⚠️ **Freddie** uses its own routing/authentication system (because of async / event loop). 
+
+The controllers it exposes cannot be imported in your `routes.yaml`, and get out of your  `security.yaml` scope.
 
 ## Usage
 
@@ -35,6 +67,8 @@ To change this address, use the `X_LISTEN` environment variable:
 X_LISTEN="0.0.0.0:8000" ./bin/freddie
 ```
 
+### Security 
+
 The default JWT key is `!ChangeMe!` with a `HS256` signature. 
 
 You can set different values by changing the environment variables (in `.env.local` or at the OS level): 
@@ -42,10 +76,18 @@ You can set different values by changing the environment variables (in `.env.loc
 
 Please refer to the [authorization](https://mercure.rocks/spec#authorization) section of the Mercure specification to authenticate as a publisher and/or a subscriber.
 
-### Redis transport
+### PHP Transport (default)
 
-By default, the hub will run as a simple event-dispatcher, in a single PHP process. 
-It can fit common needs for a basic usage, but is not scalable (opening another process won't share the same event emitter).
+By default, the hub will run as a simple event-dispatcher, in a single PHP process.
+
+It can fit common needs for a basic usage, but using this transport prevents scalability,
+as opening another process won't share the same event emitter.
+
+It's still prefectly usable as soon as :
+- You don't expect more than a few hundreds updates per second
+- Your application is served from a single server.
+
+### Redis transport
 
 On the other hand, you can launch the hub on **multiple ports** and/or **multiple servers** with a Redis transport
 (as soon as they share the same Redis instance), and optionally use a load-balancer to distribute the traffic.
