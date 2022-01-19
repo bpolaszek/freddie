@@ -74,7 +74,7 @@ return static function (ContainerConfigurator $container) {
     $services
         ->load('Freddie\\', dirname(__DIR__))
         ->exclude([
-            dirname(__DIR__) . '/Hub/DependencyInjection/*',
+            dirname(__DIR__) . '/DependencyInjection/*',
             dirname(__DIR__) . '/Hub/Transport/Redis/RedisPublisher.php',
             dirname(__DIR__) . '/Hub/Transport/Redis/RedisListener.php',
             dirname(__DIR__) . '/Hub/Transport/Redis/RedisTransport.php',
