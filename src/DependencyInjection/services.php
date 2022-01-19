@@ -40,10 +40,6 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
 
-const MERCURE_CONTROLLER = 'mercure.controller';
-const TRANSPORT_FACTORY = 'mercure.transport_factory';
-const JWT_CONSTRAINT = 'lcobucci.jwt.validation_constraint';
-
 return static function (ContainerConfigurator $container) {
     $params = $container->parameters();
     $params->set('env(TRANSPORT_DSN)', 'php://default');
@@ -60,20 +56,20 @@ return static function (ContainerConfigurator $container) {
         ->private()
         ->autoconfigure()
         ->autowire()
-        ->bind('iterable $controllers', tagged_iterator(MERCURE_CONTROLLER))
+        ->bind('iterable $controllers', tagged_iterator('mercure.controller'))
     ;
 
     $services
         ->instanceof(HubControllerInterface::class)
-        ->tag(MERCURE_CONTROLLER);
+        ->tag('mercure.controller');
 
     $services
         ->instanceof(TransportFactoryInterface::class)
-        ->tag(TRANSPORT_FACTORY);
+        ->tag('mercure.transport_factory');
 
     $services
         ->instanceof(Constraint::class)
-        ->tag(JWT_CONSTRAINT);
+        ->tag('lcobucci.jwt.validation_constraint');
 
     $services
         ->load('Freddie\\', dirname(__DIR__))
@@ -95,7 +91,7 @@ return static function (ContainerConfigurator $container) {
 
     $services
         ->set(TransportFactory::class)
-        ->arg('$factories', tagged_iterator(TRANSPORT_FACTORY));
+        ->arg('$factories', tagged_iterator('mercure.transport_factory'));
 
     $services
         ->set(TransportInterface::class)
@@ -110,7 +106,7 @@ return static function (ContainerConfigurator $container) {
 
     $services
         ->set(ValidationConstraints::class)
-        ->arg('$validationConstraints', tagged_iterator(JWT_CONSTRAINT));
+        ->arg('$validationConstraints', tagged_iterator('lcobucci.jwt.validation_constraint'));
 
     $services
         ->set(App::class)
