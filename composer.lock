@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "93ebe5fcb2a96088bc850e34bc31af6a",
+    "content-hash": "da07755e2c32607b3309a5239d978ffb",
     "packages": [
         {
             "name": "bentools/querystring",
@@ -1101,7 +1101,7 @@
         },
         {
             "name": "react/async",
-            "version": "dev-main",
+            "version": "4.x-dev",
             "source": {
                 "type": "git",
                 "url": "https://github.com/reactphp/async.git",
@@ -1119,17 +1119,18 @@
                 "react/promise": "^2.8 || ^1.2.1"
             },
             "require-dev": {
-                "phpunit/phpunit": "^9.3"
+                "phpunit/phpunit": "^9.3",
+                "react/promise-timer": "^1.8"
             },
             "default-branch": true,
             "type": "library",
             "autoload": {
-                "psr-4": {
-                    "React\\Async\\": "src/"
-                },
                 "files": [
                     "src/functions_include.php"
-                ]
+                ],
+                "psr-4": {
+                    "React\\Async\\": "src/"
+                }
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
@@ -1164,7 +1165,7 @@
             ],
             "support": {
                 "issues": "https://github.com/reactphp/async/issues",
-                "source": "https://github.com/reactphp/async/tree/main"
+                "source": "https://github.com/reactphp/async/tree/4.x"
             },
             "funding": [
                 {
@@ -1176,7 +1177,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2022-01-05T06:37:17+00:00"
+            "time": "2022-03-21T19:26:01+00:00"
         },
         {
             "name": "react/cache",
