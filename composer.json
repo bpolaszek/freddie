@@ -20,7 +20,7 @@
         "lcobucci/jwt": "^4.1",
         "nyholm/dsn": "^2.0",
         "phpdocumentor/reflection-docblock": "^5.3",
-        "react/async": "dev-main#ff11a7aa9eea7104af8f05bafbc85422dac4b8ab",
+        "react/async": "4.x-dev#ff11a7aa9eea7104af8f05bafbc85422dac4b8ab",
         "rize/uri-template": "^0.3.4",
         "symfony/console": "6.0.*",
         "symfony/dotenv": "6.0.*",
