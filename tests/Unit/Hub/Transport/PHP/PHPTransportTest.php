@@ -15,8 +15,20 @@ it('dispatches published updates', function () {
     $transport = new PHPTransport();
     $update = new Update(['/foo'], new Message());
     $subscriber = (object) ['received' => null];
-    $transport->subscribe(fn ($receivedUpdate) => $subscriber->received = $receivedUpdate);
+    $callback = fn($receivedUpdate) => $subscriber->received = $receivedUpdate;
+    $transport->subscribe($callback);
+
+    // When
     $transport->publish($update);
+
+    // Then
+    expect($subscriber->received ?? null)->toBe($update);
+
+    // When
+    $transport->unsubscribe($callback);
+    $transport->publish(new Update(['/foo'], new Message('bar')));
+
+    // Then
     expect($subscriber->received ?? null)->toBe($update);
 });
 

@@ -69,9 +69,14 @@ final class SubscribeController implements HubControllerInterface
 
         async(
             function () use ($stream, $subscribedTopics, $allowedTopics) {
-                $this->hub->subscribe(function (Update $update) use ($stream, $subscribedTopics, $allowedTopics) {
-                    $this->sendUpdate($update, $stream, $subscribedTopics, $allowedTopics);
-                });
+                $callback = fn(Update $update) => $this->sendUpdate(
+                    $update,
+                    $stream,
+                    $subscribedTopics,
+                    $allowedTopics
+                );
+                $this->hub->subscribe($callback);
+                $stream->on('close', fn() => $this->hub->unsubscribe($callback));
             }
         )();
 

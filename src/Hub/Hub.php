@@ -80,6 +80,11 @@ final class Hub implements HubInterface
         $this->transport->subscribe($callback);
     }
 
+    public function unsubscribe(callable $callback): void
+    {
+        $this->transport->unsubscribe($callback);
+    }
+
     public function reconciliate(string $lastEventID): Generator
     {
         return $this->transport->reconciliate($lastEventID);

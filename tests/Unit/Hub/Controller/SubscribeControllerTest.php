@@ -161,3 +161,36 @@ it('complains if JWT is invalid', function () {
     AccessDeniedHttpException::class,
     'Error while decoding from Base64Url, invalid base64 characters detected'
 );
+
+
+it('unsubscribes from transport whenever connection closes', function () {
+    $transport = new PHPTransport(size: 1000);
+    $controller = new SubscribeController();
+    $controller->setHub(new Hub(transport: $transport));
+    $stream = new ThroughStreamStub();
+
+    // Given
+    $hey = new Message(data: 'Hey!');
+    $hello = new Message(data: 'Hello');
+    $world = new Message(data: 'World!');
+    $transport->publish(new Update(['/bar'], $hey)); // Should not be dumped into stream
+    $transport->publish(new Update(['/foo'], $hello));
+    $request = new ServerRequest(
+        'GET',
+        '/.well-known/mercure?topic=/foo',
+        ['Last-Event-ID' => 'earliest'],
+    );
+
+    // When
+    $response = $controller($request, $stream);
+    Loop::addTimer(0.01, fn () => Loop::stop());
+    Loop::futureTick(fn () => $stream->close());
+    Loop::futureTick(fn () => $transport->publish(new Update(['/foo'], $world)));
+    Loop::run();
+
+    // Then
+    expect($response->getStatusCode())->toBe(200);
+    expect($response->getHeaderLine('Content-Type'))->toBe('text/event-stream');
+    expect($stream->storage)->toHaveCount(1);
+    expect($stream->storage[0])->toBe((string) $hello);
+});

@@ -32,6 +32,11 @@ it('exposes its transport methods', function () {
             $this->called['subscribe'] = func_get_args();
         }
 
+        public function unsubscribe(callable $callback): void
+        {
+            $this->called['unsubscribe'] = func_get_args();
+        }
+
         public function reconciliate(string $lastEventID): Generator
         {
             $this->called['reconciliate'] = func_get_args();
@@ -49,11 +54,13 @@ it('exposes its transport methods', function () {
     $hub->publish($update);
     $hub->subscribe($subscribeFn);
     iterator_to_array($hub->reconciliate($lastEventId));
+    $hub->unsubscribe($subscribeFn);
 
     // Then
     expect($transport->called['publish'])->toBe([$update]);
     expect($transport->called['subscribe'])->toBe([$subscribeFn]);
     expect($transport->called['reconciliate'])->toBe([$lastEventId]);
+    expect($transport->called['unsubscribe'])->toBe([$subscribeFn]);
 });
 
 it('complains when requesting an unrecognized option', function () {
