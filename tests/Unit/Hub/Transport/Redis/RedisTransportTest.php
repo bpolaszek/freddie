@@ -22,13 +22,19 @@ it('dispatches published updates', function () {
     // Given
     $subscriber = (object) ['received' => null];
     $update = new Update(['/foo'], new Message('bar'));
+    $callback = fn($receivedUpdate) => $subscriber->received = $receivedUpdate;
 
     // When
-    $transport->subscribe(fn($receivedUpdate) => $subscriber->received = $receivedUpdate);
+    $transport->subscribe($callback);
     $transport->publish($update);
 
     // Then
     expect($subscriber->received ?? null)->not()->toBe($update); // Because serialization/deserialization
+    expect($subscriber->received ?? null)->toEqual($update);
+
+    // When
+    $transport->unsubscribe($callback);
+    $transport->publish(new Update(['/foo'], new Message('foobar')));
     expect($subscriber->received ?? null)->toEqual($update);
 });
 

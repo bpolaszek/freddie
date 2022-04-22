@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Freddie\Hub\Transport\Redis;
 
 use Clue\React\Redis\Client;
+use Evenement\EventEmitter;
+use Evenement\EventEmitterInterface;
 use Freddie\Hub\Transport\TransportInterface;
 use Freddie\Message\Update;
 use Generator;
@@ -24,6 +26,7 @@ final class RedisTransport implements TransportInterface
         public readonly Client $subscriber,
         public readonly Client $redis,
         private RedisSerializer $serializer = new RedisSerializer(),
+        private EventEmitterInterface $eventEmitter = new EventEmitter(),
         private int $size = 0,
         private float $trimInterval = 0.0,
     ) {
@@ -32,9 +35,12 @@ final class RedisTransport implements TransportInterface
     public function subscribe(callable $callback): void
     {
         $this->init();
-        $this->subscriber->on('message', function (string $channel, string $payload) use ($callback) {
-            $callback($this->serializer->deserialize($payload));
-        });
+        $this->eventEmitter->on('mercureUpdate', $callback);
+    }
+
+    public function unsubscribe(callable $callback): void
+    {
+        $this->eventEmitter->removeListener('mercureUpdate', $callback);
     }
 
     public function publish(Update $update): PromiseInterface
@@ -84,6 +90,10 @@ final class RedisTransport implements TransportInterface
         }
 
         $this->subscriber->subscribe($this->channel); // @phpstan-ignore-line
+        $this->subscriber->on('message', function (string $channel, string $payload) {
+            $this->eventEmitter->emit('mercureUpdate', [$this->serializer->deserialize($payload)]);
+        });
+
         if ($this->trimInterval > 0) {
             Loop::addPeriodicTimer(
                 $this->trimInterval,

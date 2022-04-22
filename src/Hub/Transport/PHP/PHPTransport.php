@@ -41,6 +41,11 @@ final class PHPTransport implements TransportInterface
         $this->eventEmitter->on('mercureUpdate', $callback);
     }
 
+    public function unsubscribe(callable $callback): void
+    {
+        $this->eventEmitter->removeListener('mercureUpdate', $callback);
+    }
+
     public function reconciliate(string $lastEventID): Generator
     {
         $yield = self::EARLIEST === $lastEventID;

@@ -53,6 +53,6 @@ final class ThroughStreamStub implements WritableStreamInterface, ReadableStream
 
     public function close(): void
     {
-        throw new ShouldNotHappen(new LogicException(__METHOD__));
+        $this->emit('close');
     }
 }

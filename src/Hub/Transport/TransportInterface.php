@@ -19,6 +19,8 @@ interface TransportInterface
 
     public function subscribe(callable $callback): void;
 
+    public function unsubscribe(callable $callback): void;
+
     /**
      * @param string $lastEventID
      * @return Generator<Update>
