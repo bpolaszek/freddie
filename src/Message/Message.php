@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Freddie\Message;
 
+use Symfony\Component\Uid\Ulid;
+
 use function explode;
 use function str_contains;
 
@@ -18,6 +20,7 @@ final class Message
         public ?string $event = null,
         public ?int $retry = null,
     ) {
+        $this->id ??= (string) new Ulid();
     }
 
     public function __toString(): string

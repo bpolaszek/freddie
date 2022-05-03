@@ -103,3 +103,8 @@ it('can be received', function (
         'expected' => true, // Private update allowed on all
     ];
 });
+
+it('accepts a single topic', function () {
+    $update = new Update('/foo', new Message());
+    expect($update->topics)->toBe(['/foo']);
+});
