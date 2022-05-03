@@ -7,16 +7,23 @@ namespace Freddie\Message;
 use Freddie\Helper\TopicHelper;
 
 use function Freddie\topic;
+use function is_string;
 
 final class Update
 {
     /**
+     * @var string[]
+     */
+    public array $topics;
+
+    /**
      * @param string[] $topics
      */
     public function __construct(
-        public array $topics,
+        array|string $topics,
         public Message $message,
     ) {
+        $this->topics = is_string($topics) ? [$topics] : $topics;
     }
 
     /**

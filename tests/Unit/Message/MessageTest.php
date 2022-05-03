@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Freddie\Tests\Unit\Message;
 
 use Freddie\Message\Message;
+use Symfony\Component\Uid\Ulid;
 
 it('stringifies messages', function (Message $message, string $expected) {
     expect((string) $message)->toBe($expected);
@@ -33,4 +34,10 @@ it('stringifies messages', function (Message $message, string $expected) {
         new Message(id: '1', data: "foo\nbar", event: 'message'),
         "id:1\nevent:message\ndata:foo\ndata:bar\n\n",
     ];
+});
+
+it('has a default id', function () {
+    $message = new Message();
+    expect($message->id)->not()->toBeNull();
+    expect(Ulid::isValid($message->id))->toBeTrue();
 });

@@ -9,6 +9,7 @@ use Freddie\Hub\Middleware\HttpExceptionConverterMiddleware;
 use Freddie\Hub\Transport\PHP\PHPTransport;
 use Freddie\Hub\Transport\TransportInterface;
 use Freddie\Message\Update;
+use Freddie\Subscription\Subscriber;
 use Generator;
 use InvalidArgumentException;
 use React\EventLoop\Loop;
@@ -75,14 +76,14 @@ final class Hub implements HubInterface
             });
     }
 
-    public function subscribe(callable $callback): void
+    public function subscribe(Subscriber $subscriber): void
     {
-        $this->transport->subscribe($callback);
+        $this->transport->subscribe($subscriber);
     }
 
-    public function unsubscribe(callable $callback): void
+    public function unsubscribe(Subscriber $subscriber): void
     {
-        $this->transport->unsubscribe($callback);
+        $this->transport->unsubscribe($subscriber);
     }
 
     public function reconciliate(string $lastEventID): Generator

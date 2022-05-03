@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Freddie\Hub;
 
 use Freddie\Message\Update;
+use Freddie\Subscription\Subscriber;
 use Generator;
 use React\Promise\PromiseInterface;
 
@@ -17,9 +18,9 @@ interface HubInterface
      */
     public function publish(Update $update): PromiseInterface;
 
-    public function subscribe(callable $callback): void;
+    public function subscribe(Subscriber $subscriber): void;
 
-    public function unsubscribe(callable $callback): void;
+    public function unsubscribe(Subscriber $subscriber): void;
 
     /**
      * @param string $lastEventID

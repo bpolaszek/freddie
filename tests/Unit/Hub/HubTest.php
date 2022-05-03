@@ -8,6 +8,7 @@ use Freddie\Hub\Hub;
 use Freddie\Hub\Transport\TransportInterface;
 use Freddie\Message\Message;
 use Freddie\Message\Update;
+use Freddie\Subscription\Subscriber;
 use Generator;
 use InvalidArgumentException;
 use React\Promise\PromiseInterface;
@@ -48,19 +49,21 @@ it('exposes its transport methods', function () {
     $hub = new Hub(transport: $transport);
     $update = new Update(['foo'], new Message(Ulid::generate()));
     $subscribeFn = fn () => 'bar';
+    $subscriber = new Subscriber(['foo']);
+    $subscriber->setCallback($subscribeFn);
     $lastEventId = Ulid::generate();
 
     // When
     $hub->publish($update);
-    $hub->subscribe($subscribeFn);
+    $hub->subscribe($subscriber);
     iterator_to_array($hub->reconciliate($lastEventId));
-    $hub->unsubscribe($subscribeFn);
+    $hub->unsubscribe($subscriber);
 
     // Then
     expect($transport->called['publish'])->toBe([$update]);
-    expect($transport->called['subscribe'])->toBe([$subscribeFn]);
+    expect($transport->called['subscribe'])->toBe([$subscriber]);
     expect($transport->called['reconciliate'])->toBe([$lastEventId]);
-    expect($transport->called['unsubscribe'])->toBe([$subscribeFn]);
+    expect($transport->called['unsubscribe'])->toBe([$subscriber]);
 });
 
 it('complains when requesting an unrecognized option', function () {

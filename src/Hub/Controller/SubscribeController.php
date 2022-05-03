@@ -8,6 +8,7 @@ use Freddie\Helper\FlatQueryParser;
 use Freddie\Hub\HubControllerInterface;
 use Freddie\Hub\HubInterface;
 use Freddie\Message\Update;
+use Freddie\Subscription\Subscriber;
 use Lcobucci\JWT\UnencryptedToken;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -57,6 +58,8 @@ final class SubscribeController implements HubControllerInterface
         $allowedTopics = $this->extractAllowedTopics($request);
         $lastEventId = extract_last_event_id($request);
 
+        $subscriber = new Subscriber($subscribedTopics);
+
         if (null !== $lastEventId) {
             async(
                 function () use ($lastEventId, $stream, $subscribedTopics, $allowedTopics) {
@@ -68,15 +71,16 @@ final class SubscribeController implements HubControllerInterface
         }
 
         async(
-            function () use ($stream, $subscribedTopics, $allowedTopics) {
+            function () use ($stream, $subscribedTopics, $allowedTopics, $subscriber) {
                 $callback = fn(Update $update) => $this->sendUpdate(
                     $update,
                     $stream,
                     $subscribedTopics,
                     $allowedTopics
                 );
-                $this->hub->subscribe($callback);
-                $stream->on('close', fn() => $this->hub->unsubscribe($callback));
+                $subscriber->setCallback($callback);
+                $this->hub->subscribe($subscriber);
+                $stream->on('close', fn() => $this->hub->unsubscribe($subscriber));
             }
         )();
 
