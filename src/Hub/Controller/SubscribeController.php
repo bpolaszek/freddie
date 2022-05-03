@@ -56,9 +56,10 @@ final class SubscribeController implements HubControllerInterface
     ): ResponseInterface {
         $subscribedTopics = $this->extractSubscribedTopics($request);
         $allowedTopics = $this->extractAllowedTopics($request);
+        $payload = $this->extractPayload($request);
         $lastEventId = extract_last_event_id($request);
 
-        $subscriber = new Subscriber($subscribedTopics);
+        $subscriber = new Subscriber($subscribedTopics, $payload);
 
         if (null !== $lastEventId) {
             async(
@@ -137,5 +138,16 @@ final class SubscribeController implements HubControllerInterface
         }
 
         return $jwt->claims()->get('mercure')['subscribe'] ?? null;
+    }
+
+    private function extractPayload(ServerRequestInterface $request): mixed
+    {
+        /** @var UnencryptedToken|null $jwt */
+        $jwt = $request->getAttribute('token');
+        if (null === $jwt) {
+            return null;
+        }
+
+        return $jwt->claims()->get('mercure')['payload'] ?? null;
     }
 }

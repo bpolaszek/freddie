@@ -8,6 +8,7 @@ use FrameworkX\App;
 use Freddie\Hub\Middleware\HttpExceptionConverterMiddleware;
 use Freddie\Hub\Transport\PHP\PHPTransport;
 use Freddie\Hub\Transport\TransportInterface;
+use Freddie\Message\Message;
 use Freddie\Message\Update;
 use Freddie\Subscription\Subscriber;
 use Generator;
@@ -17,12 +18,14 @@ use React\Promise\PromiseInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 use function array_key_exists;
+use function json_encode;
 use function sprintf;
 
 final class Hub implements HubInterface
 {
     public const DEFAULT_OPTIONS = [
         'allow_anonymous' => true,
+        'enable_subscription_events' => true,
     ];
 
     /**
@@ -46,6 +49,7 @@ final class Hub implements HubInterface
         $resolver = new OptionsResolver();
         $resolver->setDefaults(self::DEFAULT_OPTIONS);
         $resolver->setAllowedTypes('allow_anonymous', 'bool');
+        $resolver->setAllowedTypes('enable_subscription_events', 'bool');
         $this->options = $resolver->resolve($options);
         foreach ($controllers as $controller) {
             $controller->setHub($this);
@@ -79,11 +83,30 @@ final class Hub implements HubInterface
     public function subscribe(Subscriber $subscriber): void
     {
         $this->transport->subscribe($subscriber);
+        if (true === $this->getOption('enable_subscription_events')) {
+            foreach ($subscriber->subscriptions as $subscription) {
+                $update = new Update(
+                    $subscription->id,
+                    new Message(data: (string) json_encode($subscription), private: true)
+                );
+                Loop::futureTick(fn () => $this->publish($update));
+            }
+        }
     }
 
     public function unsubscribe(Subscriber $subscriber): void
     {
         $this->transport->unsubscribe($subscriber);
+        if (true === $this->getOption('enable_subscription_events')) {
+            $subscriber->active = false;
+            foreach ($subscriber->subscriptions as $subscription) {
+                $update = new Update(
+                    $subscription->id,
+                    new Message(data: (string) json_encode($subscription), private: true)
+                );
+                Loop::futureTick(fn () => $this->publish($update));
+            }
+        }
     }
 
     public function reconciliate(string $lastEventID): Generator
