@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Freddie\Hub;
 
+use Evenement\EventEmitter;
+use Evenement\EventEmitterInterface;
 use FrameworkX\App;
 use Freddie\Hub\Middleware\HttpExceptionConverterMiddleware;
 use Freddie\Hub\Transport\PHP\PHPTransport;
@@ -18,7 +20,6 @@ use React\Promise\PromiseInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 use function array_key_exists;
-use function json_encode;
 use function sprintf;
 
 final class Hub implements HubInterface
@@ -43,6 +44,7 @@ final class Hub implements HubInterface
     public function __construct(
         private App $app = new App(new HttpExceptionConverterMiddleware()),
         private TransportInterface $transport = new PHPTransport(),
+        private EventEmitterInterface $eventEmitter = new EventEmitter(),
         array $options = [],
         iterable $controllers = [],
     ) {
@@ -57,6 +59,11 @@ final class Hub implements HubInterface
             $route = $controller->getRoute();
             $this->app->{$method}($route, $controller);
         }
+
+        if (true === $this->getOption('enable_subscription_events')) {
+            $eventEmitter->on('subscribe', fn(Subscriber $subscriber) => $this->notify($subscriber));
+            $eventEmitter->on('unsubscribe', fn(Subscriber $subscriber) => $this->notify($subscriber));
+        }
     }
 
     /**
@@ -70,6 +77,7 @@ final class Hub implements HubInterface
 
     public function publish(Update $update): PromiseInterface
     {
+        $this->eventEmitter->emit('publish', [$update]);
         return $this->transport->publish($update)
             ->then(function (Update $update) {
                 if (false === $this->started) {
@@ -82,30 +90,25 @@ final class Hub implements HubInterface
 
     public function subscribe(Subscriber $subscriber): void
     {
+        $this->eventEmitter->emit('subscribe', [$subscriber]);
         $this->transport->subscribe($subscriber);
-        if (true === $this->getOption('enable_subscription_events')) {
-            foreach ($subscriber->subscriptions as $subscription) {
-                $update = new Update(
-                    $subscription->id,
-                    new Message(data: (string) json_encode($subscription), private: true)
-                );
-                Loop::futureTick(fn () => $this->publish($update));
-            }
-        }
     }
 
     public function unsubscribe(Subscriber $subscriber): void
     {
+        $subscriber->active = false;
+        $this->eventEmitter->emit('unsubscribe', [$subscriber]);
         $this->transport->unsubscribe($subscriber);
-        if (true === $this->getOption('enable_subscription_events')) {
-            $subscriber->active = false;
-            foreach ($subscriber->subscriptions as $subscription) {
-                $update = new Update(
-                    $subscription->id,
-                    new Message(data: (string) json_encode($subscription), private: true)
-                );
-                Loop::futureTick(fn () => $this->publish($update));
-            }
+    }
+
+    private function notify(Subscriber $subscriber): void
+    {
+        foreach ($subscriber->subscriptions as $subscription) {
+            $update = new Update(
+                $subscription->id,
+                new Message(data: (string) json_encode($subscription), private: true)
+            );
+            $this->publish($update);
         }
     }
 
