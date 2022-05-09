@@ -34,4 +34,8 @@
             <directory>src/DependencyInjection</directory>
         </exclude>
     </coverage>
+
+    <extensions>
+        <extension class="Freddie\Tests\LoopExtension" />
+    </extensions>
 </phpunit>
