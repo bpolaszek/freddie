@@ -23,6 +23,7 @@
         "react/async": "4.x-dev#ff11a7aa9eea7104af8f05bafbc85422dac4b8ab",
         "rize/uri-template": "^0.3.4",
         "symfony/console": "6.0.*",
+        "symfony/deprecation-contracts": "^3.1",
         "symfony/dotenv": "6.0.*",
         "symfony/flex": "^1.17|^2",
         "symfony/framework-bundle": "6.0.*",
@@ -48,7 +49,12 @@
         "preferred-install": {
             "*": "dist"
         },
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "symfony/flex": true,
+            "symfony/runtime": true
+        }
     },
     "autoload": {
         "psr-4": {
