@@ -6,11 +6,15 @@ namespace Freddie\Security\JWT\Extractor;
 
 use Psr\Http\Message\ServerRequestInterface;
 
+use function strlen;
+use function str_starts_with;
+use function substr;
+
 final class AuthorizationHeaderTokenExtractor implements PSR7TokenExtractorInterface
 {
     public function __construct(
         private string $name = 'Authorization',
-        private string $prefix = 'Bearer',
+        private string $prefix = 'Bearer ',
     ) {
     }
 
@@ -21,12 +25,12 @@ final class AuthorizationHeaderTokenExtractor implements PSR7TokenExtractorInter
         }
 
         $authorizationHeader = $request->getHeaderLine($this->name);
-        $headerParts = explode(' ', $authorizationHeader);
-
-        if (!(2 === count($headerParts) && 0 === strcasecmp($headerParts[0], $this->prefix))) {
+        if (!str_starts_with($authorizationHeader, $this->prefix)) {
             return null;
         }
 
-        return $headerParts[1];
+        $token = substr($authorizationHeader, strlen($this->prefix));
+
+        return strlen($token) < 41 ? null : $token;
     }
 }

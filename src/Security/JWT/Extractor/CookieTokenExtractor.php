@@ -7,8 +7,9 @@ namespace Freddie\Security\JWT\Extractor;
 use Psr\Http\Message\ServerRequestInterface;
 
 use function array_map;
-use function Freddie\nullify;
 use function implode;
+use function is_string;
+use function strlen;
 
 final class CookieTokenExtractor implements PSR7TokenExtractorInterface
 {
@@ -36,6 +37,10 @@ final class CookieTokenExtractor implements PSR7TokenExtractorInterface
             ),
         );
 
-        return nullify($token);
+        if (!is_string($token) || strlen($token) < 41) {
+            return null;
+        }
+
+        return $token;
     }
 }

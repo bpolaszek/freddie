@@ -12,7 +12,9 @@ it('extracts token from authorization header', function (array $headers, ?string
     $request = new ServerRequest('GET', '/.well-known/mercure', $headers);
     expect($extractor->extract($request))->toBe($expected);
 })->with(function () {
-    yield [['Authorization' => 'Bearer foobar'], 'foobar'];
+    $validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30._esyynAyo2Z6PyGe0mM_SuQ3c-C7sMQJ1YxVLvlj80A';
+
+    yield [['Authorization' => 'Bearer ' . $validToken], $validToken];
     yield [['Authorization' => 'foobar'], null];
     yield [['Authorization' => ''], null];
     yield [[], null];
