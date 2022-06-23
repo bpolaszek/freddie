@@ -76,6 +76,19 @@ it('extracts Last-Event-ID from request', function (ServerRequestInterface $requ
         'expected' => 'foo',
     ];
     yield [
+        'request' => new ServerRequest('GET', '/.well-known/mercure?lastEventID=foo'),
+        'expected' => 'foo',
+    ];
+    yield [
+        'request' => new ServerRequest('GET', '/.well-known/mercure'),
+        'expected' => null,
+    ];
+});
+
+it('extracts Last-Event-ID from request using deprecated query parameter.', function (ServerRequestInterface $request, ?string $expected) {
+    expect(extract_last_event_id($request))->toBe($expected);
+})->with(function () {
+    yield [
         'request' => new ServerRequest('GET', '/.well-known/mercure?Last-Event-ID=foo'),
         'expected' => 'foo',
     ];
@@ -90,9 +103,5 @@ it('extracts Last-Event-ID from request', function (ServerRequestInterface $requ
     yield [
         'request' => new ServerRequest('GET', '/.well-known/mercure?LAST-EVENT-ID=foo'),
         'expected' => 'foo',
-    ];
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure'),
-        'expected' => null,
     ];
 });
