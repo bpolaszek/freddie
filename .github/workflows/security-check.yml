@@ -18,4 +18,4 @@ jobs:
         with:
           path: ~/.symfony/cache
           key: db
-      - uses: symfonycorp/security-checker-action@v2
+      - uses: symfonycorp/security-checker-action@v4
