@@ -30,8 +30,7 @@ it('instantiates a Redis transport', function (string $dsn, RedisTransport $expe
     yield ['redis://localhost?size=1000&trimInterval=2.5', new RedisTransport(
         $redisFactory->createLazyClient('redis://localhost?size=1000&trimInterval=2.5'),
         $redisFactory->createLazyClient('redis://localhost?size=1000&trimInterval=2.5'),
-        size: 1000,
-        trimInterval: 2.5,
+        options: ['size' => 1000, 'trimInterval' => 2.5],
     )];
 });
 
