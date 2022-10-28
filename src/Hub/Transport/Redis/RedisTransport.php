@@ -62,7 +62,7 @@ final class RedisTransport implements TransportInterface
         $payload = $this->serializer->serialize($update);
 
         return $this->redis->publish($this->options['channel'], $payload) // @phpstan-ignore-line
-        ->then(fn () => $this->store($update))
+            ->then(fn () => $this->store($update))
             ->then(fn () => $update);
     }
 
