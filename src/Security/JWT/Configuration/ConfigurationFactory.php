@@ -75,7 +75,7 @@ final class ConfigurationFactory
     {
         return match (true) {
             is_readable($key) => Signer\Key\InMemory::file($key, $passphrase ?? ''),
-            default => Signer\Key\InMemory::plainText($key, $passphrase ?? '')
+            default => Signer\Key\InMemory::plainText($key, $passphrase ?? ''), // @phpstan-ignore-line
         };
     }
 }
