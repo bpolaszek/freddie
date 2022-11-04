@@ -40,7 +40,7 @@ it('dispatches published updates', function () {
 
 it('performs state reconciliation', function () {
     $client = new RedisClientStub();
-    $transport = new RedisTransport($client, clone $client, size: 3);
+    $transport = new RedisTransport($client, clone $client, options: ['size' => 3]);
 
     // Given
     $updates = [
@@ -81,7 +81,7 @@ it('performs state reconciliation', function () {
 
 it('periodically trims the database', function () {
     $client = new RedisClientStub();
-    $transport = new RedisTransport($client, clone $client, size: 3, trimInterval: 0.01);
+    $transport = new RedisTransport($client, clone $client, options: ['size' => 3, 'trimInterval' => 0.01]);
 
     // Given
     $updates = [

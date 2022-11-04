@@ -12,24 +12,37 @@ use Freddie\Message\Update;
 use Generator;
 use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 use function React\Async\await;
 use function React\Promise\resolve;
 
 final class RedisTransport implements TransportInterface
 {
-    private string $channel = 'mercure';
-    private string $storageKey = 'mercureUpdates';
+    /**
+     * @var array<string, mixed>
+     */
+    private array $options;
     private bool $initialized = false;
 
+    /**
+     * @param array<string, mixed> $options
+     */
     public function __construct(
         public readonly Client $subscriber,
         public readonly Client $redis,
-        private RedisSerializer $serializer = new RedisSerializer(),
-        private EventEmitterInterface $eventEmitter = new EventEmitter(),
-        private int $size = 0,
-        private float $trimInterval = 0.0,
+        private readonly RedisSerializer $serializer = new RedisSerializer(),
+        private readonly EventEmitterInterface $eventEmitter = new EventEmitter(),
+        array $options = [],
     ) {
+        $resolver = new OptionsResolver();
+        $resolver->setDefaults([
+            'size' => 0,
+            'trimInterval' => 0.0,
+            'channel' => 'mercure',
+            'key' => 'mercureUpdates',
+        ]);
+        $this->options = $resolver->resolve($options);
     }
 
     public function subscribe(callable $callback): void
@@ -48,20 +61,21 @@ final class RedisTransport implements TransportInterface
         $this->init();
         $payload = $this->serializer->serialize($update);
 
-        return $this->redis->publish($this->channel, $payload) // @phpstan-ignore-line
-            ->then(fn() => $this->store($update))
-            ->then(fn() => $update);
+        return $this->redis->publish($this->options['channel'], $payload) // @phpstan-ignore-line
+            ->then(fn () => $this->store($update))
+            ->then(fn () => $update);
     }
 
     public function reconciliate(string $lastEventID): Generator
     {
         $this->init();
-        if ($this->size <= 0) {
+        if ($this->options['size'] <= 0) {
             return; // @codeCoverageIgnore
         }
 
         $yield = self::EARLIEST === $lastEventID;
-        $payloads = await($this->redis->lrange($this->storageKey, -$this->size, -1)); // @phpstan-ignore-line
+        // @phpstan-ignore-next-line
+        $payloads = await($this->redis->lrange($this->options['key'], -$this->options['size'], -1));
         foreach ($payloads as $payload) {
             $update = $this->serializer->deserialize($payload);
             if ($yield) {
@@ -76,11 +90,12 @@ final class RedisTransport implements TransportInterface
     private function store(Update $update): PromiseInterface
     {
         $this->init();
-        if ($this->size <= 0) {
+        if ($this->options['size'] <= 0) {
             return resolve();
         }
 
-        return $this->redis->rpush($this->storageKey, $this->serializer->serialize($update)); // @phpstan-ignore-line
+        // @phpstan-ignore-next-line
+        return $this->redis->rpush($this->options['key'], $this->serializer->serialize($update));
     }
 
     private function init(): void
@@ -89,15 +104,15 @@ final class RedisTransport implements TransportInterface
             return;
         }
 
-        $this->subscriber->subscribe($this->channel); // @phpstan-ignore-line
+        $this->subscriber->subscribe($this->options['channel']); // @phpstan-ignore-line
         $this->subscriber->on('message', function (string $channel, string $payload) {
             $this->eventEmitter->emit('mercureUpdate', [$this->serializer->deserialize($payload)]);
         });
 
-        if ($this->trimInterval > 0) {
+        if ($this->options['trimInterval'] > 0) {
             Loop::addPeriodicTimer(
-                $this->trimInterval,
-                fn () => $this->redis->ltrim($this->storageKey, -$this->size, -1) // @phpstan-ignore-line
+                $this->options['trimInterval'],
+                fn () => $this->redis->ltrim($this->options['key'], -$this->options['size'], -1) // @phpstan-ignore-line
             );
         }
         $this->initialized = true;
