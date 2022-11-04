@@ -1,7 +1,6 @@
 * text=auto
 
 /.github export-ignore
-/bin export-ignore
 /config export-ignore
 /tests export-ignore
 /var export-ignore
