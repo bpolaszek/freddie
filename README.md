@@ -164,6 +164,12 @@ example.com
 reverse_proxy 10.1.2.3:8080 10.1.2.3:8081 10.1.2.4:8080 10.1.2.4:8081
 ```
 
+### Payload limitations
+⚠ There's a known limit in [Framework-X](https://framework-x.org/docs/api/request/) which prevents request bodies to weigh more than [64 KB](https://github.com/reactphp/http/issues/412). 
+At the time of writing, this limit cannot be raised due to Framework-X encapsulating HTTP Server instantiation.
+
+Publishing bigger updates to Freddie (through HTTP, at least) could result in 400 errors.
+
 ## Feature coverage
 
 | Feature                                     | Covered                               |
