@@ -33,6 +33,9 @@ use Lcobucci\JWT\Signer\Key;
 use Lcobucci\JWT\Token\Parser;
 use Lcobucci\JWT\Validation\Constraint;
 use Lcobucci\JWT\Validator;
+use Monolog\Formatter\LineFormatter;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function dirname;
@@ -47,6 +50,7 @@ return static function (ContainerConfigurator $container) {
     $params->set('env(JWT_SECRET_KEY)', '!ChangeMe!');
     $params->set('env(JWT_PUBLIC_KEY)', null);
     $params->set('env(JWT_ALGORITHM)', 'HS256');
+    $params->set('env(LOG_LEVEL)', 'INFO');
     $params->set('transport_dsn', '%env(resolve:TRANSPORT_DSN)%');
     $params->set('allow_anonymous', '%env(bool:ALLOW_ANONYMOUS)%');
 
@@ -171,4 +175,20 @@ return static function (ContainerConfigurator $container) {
     $services
         ->set(Constraint\SignedWith::class)
         ->arg('$key', service('jwt.verification_key'));
+
+    $services
+        ->set('log_formatter', LineFormatter::class)
+        ->arg('$format', "%%datetime%% %%channel%%.%%level_name%%: %%message%% %%context%% %%extra%%\n")
+        ->arg('$dateFormat', "Y-m-d H:i:s.m");
+
+    $services
+        ->set('stream_handler', StreamHandler::class)
+        ->arg('$stream', 'php://stderr')
+        ->arg('$level', param('env(LOG_LEVEL)'))
+        ->call('setFormatter', [service('log_formatter')]);
+
+    $services
+        ->set('logger', Logger::class)
+        ->arg('$name', 'freddie')
+        ->arg('$handlers', [service('stream_handler')]);
 };

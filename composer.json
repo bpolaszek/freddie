@@ -18,6 +18,7 @@
         "clue/redis-react": "^2.5",
         "doctrine/annotations": "^1.0",
         "lcobucci/jwt": "^4.1",
+        "monolog/monolog": "^3.3",
         "nyholm/dsn": "^2.0",
         "phpdocumentor/reflection-docblock": "^5.3",
         "react/async": "^4.0.0",
@@ -36,6 +37,7 @@
     },
     "require-dev": {
         "clue/reactphp-eventsource": "^1.0.0",
+        "mockery/mockery": "^1.5",
         "pestphp/pest": "^1.21",
         "phpstan/phpstan": "^1.2",
         "react/child-process": "^0.6.4",
