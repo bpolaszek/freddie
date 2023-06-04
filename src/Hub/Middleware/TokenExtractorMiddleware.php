@@ -14,6 +14,8 @@ use Lcobucci\JWT\Validator;
 use Lcobucci\JWT\Validation\Validator as DefaultValidator;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 final class TokenExtractorMiddleware
@@ -23,6 +25,7 @@ final class TokenExtractorMiddleware
         private Validator $validator = new DefaultValidator(),
         private ValidationConstraints $validationConstraints = new ValidationConstraints([]),
         private PSR7TokenExtractorInterface $tokenExtractor = new ChainTokenExtractor(),
+        private LoggerInterface $logger = new NullLogger(),
     ) {
     }
 
@@ -43,6 +46,7 @@ final class TokenExtractorMiddleware
             $jwt = $this->parser->parse($token);
             $this->validator->assert($jwt, ...$this->validationConstraints->constraints);
         } catch (Exception $e) {
+            $this->logger->error(sprintf('HTTP: 403, %s', $e->getMessage()));
             throw new AccessDeniedHttpException($e->getMessage());
         }
 
