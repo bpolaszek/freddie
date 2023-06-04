@@ -12,6 +12,8 @@ use Freddie\Message\Update;
 use Freddie\Subscription\Subscriber;
 use Generator;
 use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -42,6 +44,7 @@ final class Hub implements HubInterface
         private TransportInterface $transport = new PHPTransport(),
         array $options = [],
         iterable $controllers = [],
+        private LoggerInterface $logger = new NullLogger(),
     ) {
         $resolver = new OptionsResolver();
         $resolver->setDefaults(self::DEFAULT_OPTIONS);
@@ -61,11 +64,13 @@ final class Hub implements HubInterface
     public function run(): void
     {
         $this->started = true;
+        $this->logger->info(sprintf('HUB: Started with %s', $this->transport::class));
         $this->app->run();
     }
 
     public function publish(Update $update): PromiseInterface
     {
+        $this->logger->debug(sprintf('HUB: Publish %s', $update));
         return $this->transport->publish($update)
             ->then(function (Update $update) {
                 if (false === $this->started) {
@@ -78,11 +83,13 @@ final class Hub implements HubInterface
 
     public function subscribe(Subscriber $subscriber): void
     {
+        $this->logger->debug(sprintf('HUB: New subscription %s', $subscriber));
         $this->transport->subscribe($subscriber);
     }
 
     public function unsubscribe(Subscriber $subscriber): void
     {
+        $this->logger->debug(sprintf('HUB: Unsubscription %s', $subscriber));
         $this->transport->unsubscribe($subscriber);
     }
 
@@ -94,7 +101,7 @@ final class Hub implements HubInterface
     public function getOption(string $name): mixed
     {
         if (!array_key_exists($name, $this->options)) {
-            throw new InvalidArgumentException(sprintf('Invalid option `%s`.', $name));
+            throw new InvalidArgumentException(sprintf('HUB: Invalid option `%s`.', $name));
         }
 
         return $this->options[$name];
