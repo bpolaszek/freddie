@@ -11,6 +11,7 @@ use Freddie\Hub\Middleware\HttpExceptionConverterMiddleware;
 use Freddie\Hub\Transport\PHP\PHPTransport;
 use Freddie\Message\Message;
 use Freddie\Message\Update;
+use Psr\Log\LoggerInterface;
 use React\EventLoop\Loop;
 use React\Http\Message\ServerRequest;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -96,8 +97,13 @@ it('receives private updates when authorized', function () {
 });
 
 it('yells if user doesn\'t subscribe to at least one topic', function () {
+    $logger = \Mockery::mock(LoggerInterface::class);
+    $logger
+        ->shouldReceive('debug')
+        ->with('SUBSCRIPTION: Missing topic parameter.');
     $controller = new SubscribeController();
     $controller->setHub(new Hub(options: ['allow_anonymous' => true]));
+    $controller->setLogger($logger);
 
     // Given
     $request = new ServerRequest(
@@ -116,8 +122,13 @@ it('yells if user doesn\'t subscribe to at least one topic', function () {
 );
 
 it('yells when anonymous subscriptions are forbidden and user doesn\'t provide a JWT', function () {
+    $logger = \Mockery::mock(LoggerInterface::class);
+    $logger
+        ->shouldReceive('debug')
+        ->with('SUBSCRIPTION: Anonymous subscriptions are not allowed on this hub.');
     $controller = new SubscribeController();
     $controller->setHub(new Hub(options: ['allow_anonymous' => false]));
+    $controller->setLogger($logger);
 
     // Given
     $request = new ServerRequest(

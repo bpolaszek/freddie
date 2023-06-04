@@ -95,4 +95,13 @@ final class Update
 
         return true;
     }
+
+    public function __toString(): string
+    {
+        return sprintf(
+            '%s on [%s]',
+            $this->message->data ?? 'null',
+            implode(',', $this->topics),
+        );
+    }
 }

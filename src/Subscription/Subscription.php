@@ -11,4 +11,9 @@ final class Subscription
         public readonly string $topic,
     ) {
     }
+
+    public function __toString(): string
+    {
+        return $this->topic;
+    }
 }

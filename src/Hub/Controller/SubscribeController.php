@@ -12,6 +12,7 @@ use Freddie\Subscription\Subscriber;
 use Lcobucci\JWT\UnencryptedToken;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
 use React\Http\Message\Response;
 use React\Stream\ReadableStreamInterface;
 use React\Stream\ThroughStream;
@@ -27,9 +28,18 @@ final class SubscribeController implements HubControllerInterface
 {
     private HubInterface $hub;
 
+    private LoggerInterface $logger;
+
     public function setHub(HubInterface $hub): self
     {
         $this->hub = $hub;
+
+        return $this;
+    }
+
+    public function setLogger(LoggerInterface $logger): self
+    {
+        $this->logger = $logger;
 
         return $this;
     }
@@ -115,7 +125,9 @@ final class SubscribeController implements HubControllerInterface
     {
         $qs = query_string($request->getUri(), new FlatQueryParser());
         if (!$qs->hasParam('topic')) {
-            throw new BadRequestHttpException('Missing topic parameter.');
+            $errorMessage = 'Missing topic parameter.';
+            $this->logger->debug(sprintf('SUBSCRIPTION: %s', $errorMessage));
+            throw new BadRequestHttpException($errorMessage);
         }
 
         return (array) $qs->getParam('topic');
@@ -130,7 +142,9 @@ final class SubscribeController implements HubControllerInterface
         $jwt = $request->getAttribute('token');
         if (null === $jwt) {
             if (!$this->hub->getOption('allow_anonymous')) {
-                throw new AccessDeniedHttpException('Anonymous subscriptions are not allowed on this hub.');
+                $errorMessage = 'Anonymous subscriptions are not allowed on this hub.';
+                $this->logger->debug(sprintf('SUBSCRIPTION: %s', $errorMessage));
+                throw new AccessDeniedHttpException($errorMessage);
             }
 
             return null;

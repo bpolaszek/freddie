@@ -13,6 +13,8 @@ use Freddie\Hub\Transport\PHP\PHPTransport;
 use Freddie\Message\Message;
 use Freddie\Message\Update;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use React\Http\Message\Response;
 use React\Http\Message\ServerRequest;
 use ReflectionClass;
@@ -32,6 +34,10 @@ it('publishes updates to the hub', function (
     ?Update $expectedUpdate
 ) {
     $transport = new PHPTransport(size: 1);
+    $logger = \Mockery::mock(LoggerInterface::class);
+    $logger
+        ->shouldReceive('error')
+        ->with('HTTP: 400, Your rights are not sufficient to publish this update.');
     $controller = new PublishController();
     $app = new App(
         new TokenExtractorMiddleware(
@@ -43,6 +49,7 @@ it('publishes updates to the hub', function (
     );
     $hub = new Hub($app, $transport);
     $controller->setHub($hub);
+    $controller->setLogger($logger);
     $transportRefl = new ReflectionClass($transport);
     $updates = $transportRefl->getProperty('updates');
     $updates->setAccessible(true);
@@ -158,7 +165,12 @@ it('complains if JWT does not contain a mercure.publish claim', function () {
 );
 
 it('yells when no topic is provided', function () {
+    $logger = \Mockery::mock(LoggerInterface::class);
+    $logger
+        ->shouldReceive('error')
+        ->with('HTTP: 400, Missing topic parameter.');
     $controller = new PublishController();
+    $controller->setLogger($logger);
 
     // Given
     $request = new ServerRequest(
@@ -178,7 +190,12 @@ it('yells when no topic is provided', function () {
 );
 
 it('yells when update cannot be published', function () {
+    $logger = \Mockery::mock(LoggerInterface::class);
+    $logger
+        ->shouldReceive('error')
+        ->with('HTTP: 400, Your rights are not sufficient to publish this update.');
     $controller = new PublishController();
+    $controller->setLogger($logger);
 
     // Given
     $jwt = create_jwt(['mercure' => ['publish' => ['/bar']]]);
