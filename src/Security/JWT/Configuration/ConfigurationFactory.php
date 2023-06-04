@@ -7,12 +7,15 @@ namespace Freddie\Security\JWT\Configuration;
 use InvalidArgumentException;
 use Lcobucci\JWT\Configuration;
 use Lcobucci\JWT\Signer;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 use function is_readable;
 
 final class ConfigurationFactory
 {
     public function __construct(
+        private LoggerInterface $logger = new NullLogger(),
         private Signer\Ecdsa\SignatureConverter $signatureConverter = new Signer\Ecdsa\MultibyteStringConverter(),
     ) {
     }
@@ -36,6 +39,11 @@ final class ConfigurationFactory
 
     private function createSymmetricConfiguration(string $algorithm, string $secretKey): Configuration
     {
+        $this->logger->debug(sprintf(
+            'JWT: Symmetric signer with %s, %s',
+            $algorithm,
+            $this->getParameter('secretKey', $secretKey)
+        ));
         return Configuration::forSymmetricSigner(
             $this->getSigner($algorithm),
             $this->getKey($secretKey),
@@ -48,6 +56,13 @@ final class ConfigurationFactory
         string $publicKey,
         string $passphrase,
     ): Configuration {
+        $this->logger->debug(sprintf(
+            'JWT: Asymmetric signer with %s, %s, %s, %s',
+            $algorithm,
+            $this->getParameter('secretKey', $secretKey),
+            $this->getParameter('publicKey', $publicKey),
+            $this->getParameter('passphrase', $passphrase),
+        ));
         return Configuration::forAsymmetricSigner(
             $this->getSigner($algorithm),
             $this->getKey($secretKey, $passphrase),
@@ -77,5 +92,14 @@ final class ConfigurationFactory
             is_readable($key) => Signer\Key\InMemory::file($key, $passphrase ?? ''),
             default => Signer\Key\InMemory::plainText($key, $passphrase ?? ''), // @phpstan-ignore-line
         };
+    }
+
+    private function getParameter(string $name, string $value): string
+    {
+        if ($value === '') {
+            return sprintf('%s is empty', $name);
+        }
+
+        return sprintf('%s is not empty (%d)', $name, strlen($value));
     }
 }

@@ -12,6 +12,7 @@ use Freddie\Message\Update;
 use Lcobucci\JWT\UnencryptedToken;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
 use React\Http\Message\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -25,9 +26,18 @@ final class PublishController implements HubControllerInterface
 {
     private HubInterface $hub;
 
+    private LoggerInterface $logger;
+
     public function setHub(HubInterface $hub): self
     {
         $this->hub = $hub;
+
+        return $this;
+    }
+
+    public function setLogger(LoggerInterface $logger): self
+    {
+        $this->logger = $logger;
 
         return $this;
     }
@@ -52,7 +62,9 @@ final class PublishController implements HubControllerInterface
     {
         $input = query_string((string) $request->getBody(), new FlatQueryParser());
         if (!$input->hasParam('topic')) {
-            throw new BadRequestHttpException('Missing topic parameter.');
+            $errorMessage = 'Missing topic parameter.';
+            $this->logger->error(sprintf('HTTP: 400, %s', $errorMessage));
+            throw new BadRequestHttpException($errorMessage);
         }
 
         $message = new Message(
@@ -66,7 +78,9 @@ final class PublishController implements HubControllerInterface
 
         $allowedTopics = $this->extractAllowedTopics($request);
         if (!$update->canBePublished($allowedTopics)) {
-            throw new AccessDeniedHttpException('Your rights are not sufficient to publish this update.');
+            $errorMessage = 'Your rights are not sufficient to publish this update.';
+            $this->logger->error(sprintf('HTTP: 400, %s', $errorMessage));
+            throw new AccessDeniedHttpException($errorMessage);
         }
 
         $this->hub->publish($update);

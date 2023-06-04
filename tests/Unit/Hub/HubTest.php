@@ -11,6 +11,7 @@ use Freddie\Message\Update;
 use Freddie\Subscription\Subscriber;
 use Generator;
 use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
 use React\Promise\PromiseInterface;
 use Symfony\Component\Uid\Ulid;
 
@@ -44,9 +45,24 @@ it('exposes its transport methods', function () {
             yield;
         }
     };
+    $logger = \Mockery::mock(LoggerInterface::class);
+    $logger
+        ->expects()
+        ->debug('HUB: Publish null on [foo]')
+        ->once();
+    $logger
+        ->expects()
+        ->debug()
+        ->withArgs(fn(string $message) => preg_match('/HUB: New subscription .+ on \\[foo\\]/', $message) === 1)
+        ->once();
+    $logger
+        ->expects()
+        ->debug()
+        ->withArgs(fn(string $message) => preg_match('/HUB: Unsubscription .+ on \\[foo\\]/', $message) === 1)
+        ->once();
 
     // Given
-    $hub = new Hub(transport: $transport);
+    $hub = new Hub(transport: $transport, logger: $logger);
     $update = new Update(['foo'], new Message(Ulid::generate()));
     $subscribeFn = fn () => 'bar';
     $subscriber = new Subscriber(['foo']);

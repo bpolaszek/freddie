@@ -76,6 +76,14 @@ You can set different values by changing the environment variables (in `.env.loc
 
 Please refer to the [authorization](https://mercure.rocks/spec#authorization) section of the Mercure specification to authenticate as a publisher and/or a subscriber.
 
+### Logging
+
+The default logging level is `INFO`.
+
+You can set different values by changing the environment variable `LOG_LEVEL` (in `.env.local` or at the OS level).
+Available values are `DEBUG`, `INFO`, `NOTICE`, `WARNING`, `ERROR`;
+
+
 ### PHP Transport (default)
 
 By default, the hub will run as a simple event-dispatcher, in a single PHP process.

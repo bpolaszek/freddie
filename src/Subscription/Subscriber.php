@@ -47,4 +47,13 @@ final class Subscriber
     {
         ($this->callback)(...$args);
     }
+
+    public function __toString(): string
+    {
+        return sprintf(
+            '%s on [%s]',
+            $this->id,
+            implode(',', $this->subscriptions)
+        );
+    }
 }
