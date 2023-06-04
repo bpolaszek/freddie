@@ -6,12 +6,17 @@ namespace Freddie\Tests\Unit\Security\JWT\Configuration;
 
 use Freddie\Security\JWT\Configuration\ConfigurationFactory;
 use Lcobucci\JWT\Signer;
+use Psr\Log\LoggerInterface;
 
 use function dirname;
 use function file_get_contents;
 
 it('creates a symmetric configuration', function () {
-    $build = new ConfigurationFactory();
+    $logger = \Mockery::mock(LoggerInterface::class);
+    $logger
+        ->shouldReceive('debug')
+        ->with('JWT: Symmetric signer with HS512, secretKey is not empty (6)');
+    $build = new ConfigurationFactory($logger);
     $config = $build(
         'HS512',
         'foobar',
@@ -22,7 +27,16 @@ it('creates a symmetric configuration', function () {
 });
 
 it('creates an asymmetric configuration', function () {
-    $build = new ConfigurationFactory();
+    $logger = \Mockery::mock(LoggerInterface::class);
+    $logger
+        ->shouldReceive('debug')
+        ->with(
+            'JWT: Asymmetric signer with RS512, ' .
+            'secretKey is not empty (1854), ' .
+            'publicKey is not empty (451), ' .
+            'passphrase is not empty (6)'
+        );
+    $build = new ConfigurationFactory($logger);
     $privateKey = file_get_contents(dirname(__DIR__, 4) . '/config/jwt/private.pem');
     $publicKey = dirname(__DIR__, 4) . '/config/jwt/public.pem';
     $config = $build(
