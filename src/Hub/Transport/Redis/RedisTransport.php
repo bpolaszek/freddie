@@ -7,12 +7,14 @@ namespace Freddie\Hub\Transport\Redis;
 use Clue\React\Redis\Client;
 use Evenement\EventEmitter;
 use Evenement\EventEmitterInterface;
+use Freddie\Hub\Hub;
 use Freddie\Hub\Transport\TransportInterface;
 use Freddie\Message\Update;
 use Generator;
 use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Throwable;
 
 use function React\Async\await;
 use function React\Promise\resolve;
@@ -41,8 +43,24 @@ final class RedisTransport implements TransportInterface
             'trimInterval' => 0.0,
             'channel' => 'mercure',
             'key' => 'mercureUpdates',
+            'pingInterval' => 2.0,
         ]);
         $this->options = $resolver->resolve($options);
+        if ($this->options['pingInterval']) {
+            Loop::addPeriodicTimer($this->options['pingInterval'], fn () => $this->ping());
+        }
+    }
+
+    /**
+     * @codeCoverageIgnore
+     */
+    private function ping(): void
+    {
+        try {
+            await($this->redis->ping()); // @phpstan-ignore-line
+        } catch (Throwable) {
+            Hub::die(new \RuntimeException('Redis connection closed unexpectedly.'));
+        }
     }
 
     public function subscribe(callable $callback): void

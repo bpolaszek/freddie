@@ -38,6 +38,7 @@ final class RedisTransportFactory implements TransportFactoryInterface
             options: [
                 'size' => (int) max(0, $parsed->getParameter('size', 0)),
                 'trimInterval' => (float) max(0, $parsed->getParameter('trimInterval', 0.0)),
+                'pingInterval' => (float) max(0, $parsed->getParameter('pingInterval', 2.0)),
                 'channel' => (string) $parsed->getParameter('channel', 'mercure'),
                 'key' => (string) $parsed->getParameter('key', 'mercureUpdates'),
             ],

@@ -15,6 +15,7 @@ use InvalidArgumentException;
 use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Throwable;
 
 use function array_key_exists;
 use function sprintf;
@@ -98,5 +99,15 @@ final class Hub implements HubInterface
         }
 
         return $this->options[$name];
+    }
+
+    /**
+     * @codeCoverageIgnore
+     */
+    public static function die(Throwable $e): never
+    {
+        Loop::stop();
+
+        throw $e;
     }
 }
