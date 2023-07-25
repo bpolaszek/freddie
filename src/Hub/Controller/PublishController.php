@@ -15,11 +15,14 @@ use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Uid\Ulid;
+use Throwable;
 
 use function BenTools\QueryString\query_string;
 use function Freddie\is_truthy;
 use function Freddie\nullify;
+use function React\Async\await;
 
 final class PublishController implements HubControllerInterface
 {
@@ -69,7 +72,11 @@ final class PublishController implements HubControllerInterface
             throw new AccessDeniedHttpException('Your rights are not sufficient to publish this update.');
         }
 
-        $this->hub->publish($update);
+        try {
+            await($this->hub->publish($update));
+        } catch (Throwable) {
+            throw new ServiceUnavailableHttpException();
+        }
 
         return new Response(201, body: (string) $update->message->id);
     }
