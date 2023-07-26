@@ -25,7 +25,6 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Uid\Ulid;
 
-use function expect;
 use function Freddie\Tests\create_jwt;
 use function Freddie\Tests\handle;
 use function Freddie\Tests\jwt_config;
@@ -256,6 +255,8 @@ it('throws a service unavailable exception when publishing fails', function () {
 
     // When
     $response = handle($app, $request);
+
+    // Then
     expect($response->getStatusCode())->toBe(StatusCodeInterface::STATUS_SERVICE_UNAVAILABLE)
-    ->and((string) $response->getBody())->toBeEmpty();
+        ->and((string) $response->getBody())->toBeEmpty();
 });

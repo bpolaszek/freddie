@@ -13,6 +13,7 @@ use Freddie\Message\Update;
 use Generator;
 use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
+use RuntimeException;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Throwable;
 
@@ -59,7 +60,7 @@ final class RedisTransport implements TransportInterface
         try {
             await($this->redis->ping()); // @phpstan-ignore-line
         } catch (Throwable) {
-            Hub::die(new \RuntimeException('Redis connection closed unexpectedly.'));
+            Hub::die(new RuntimeException('Redis connection closed unexpectedly.'));
         }
     }
 
