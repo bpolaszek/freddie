@@ -101,9 +101,6 @@ final class Hub implements HubInterface
         return $this->options[$name];
     }
 
-    /**
-     * @codeCoverageIgnore
-     */
     public static function die(Throwable $e): never
     {
         Loop::stop();

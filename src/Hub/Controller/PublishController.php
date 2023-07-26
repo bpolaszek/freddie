@@ -72,13 +72,11 @@ final class PublishController implements HubControllerInterface
             throw new AccessDeniedHttpException('Your rights are not sufficient to publish this update.');
         }
 
-        // @codeCoverageIgnoreStart
         try {
             await($this->hub->publish($update));
         } catch (Throwable) {
             throw new ServiceUnavailableHttpException();
         }
-        // @codeCoverageIgnoreEnd
 
         return new Response(201, body: (string) $update->message->id);
     }

@@ -11,7 +11,9 @@ use Freddie\Message\Update;
 use Freddie\Subscription\Subscriber;
 use Generator;
 use InvalidArgumentException;
+use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
+use RuntimeException;
 use Symfony\Component\Uid\Ulid;
 
 use function func_get_args;
@@ -70,3 +72,7 @@ it('complains when requesting an unrecognized option', function () {
     $hub = new Hub();
     $hub->getOption('foo');
 })->throws(InvalidArgumentException::class, 'Invalid option `foo`.');
+
+it('dies', function () {
+    Hub::die(new RuntimeException('😵'));
+})->throws(RuntimeException::class, '😵');
