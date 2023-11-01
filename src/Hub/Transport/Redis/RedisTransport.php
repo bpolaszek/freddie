@@ -57,11 +57,11 @@ final class RedisTransport implements TransportInterface
      */
     private function ping(): void
     {
-        try {
-            await($this->redis->ping()); // @phpstan-ignore-line
-        } catch (Throwable) {
-            Hub::die(new RuntimeException('Redis connection closed unexpectedly.'));
-        }
+        /** @var PromiseInterface $ping */
+        $ping = $this->redis->ping(); // @phpstan-ignore-line
+        $ping->then(
+            onRejected: Hub::die(...),
+        );
     }
 
     public function subscribe(callable $callback): void
