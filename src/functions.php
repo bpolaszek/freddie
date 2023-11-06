@@ -57,6 +57,7 @@ function extract_last_event_id(ServerRequestInterface $request): ?string
 }
 
 /**
+ * @internal
  * @template T
  * @param PromiseInterface<T> $promise
  * @return PromiseInterface<T>
