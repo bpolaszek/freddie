@@ -4,18 +4,23 @@ declare(strict_types=1);
 
 namespace Freddie\Tests\Unit\Hub\Controller;
 
+use Fig\Http\Message\StatusCodeInterface;
 use FrameworkX\App;
 use Freddie\Hub\Controller\PublishController;
 use Freddie\Hub\Hub;
 use Freddie\Hub\Middleware\HttpExceptionConverterMiddleware;
 use Freddie\Hub\Middleware\TokenExtractorMiddleware;
 use Freddie\Hub\Transport\PHP\PHPTransport;
+use Freddie\Hub\Transport\TransportInterface;
 use Freddie\Message\Message;
 use Freddie\Message\Update;
+use Generator;
 use Psr\Http\Message\ResponseInterface;
 use React\Http\Message\Response;
 use React\Http\Message\ServerRequest;
+use React\Promise\PromiseInterface;
 use ReflectionClass;
+use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Uid\Ulid;
@@ -24,6 +29,7 @@ use function Freddie\Tests\create_jwt;
 use function Freddie\Tests\handle;
 use function Freddie\Tests\jwt_config;
 use function Freddie\Tests\with_token;
+use function React\Promise\reject;
 
 it('publishes updates to the hub', function (
     string $payload,
@@ -203,3 +209,54 @@ it('yells when update cannot be published', function () {
     AccessDeniedHttpException::class,
     'Your rights are not sufficient to publish this update.'
 );
+
+it('throws a service unavailable exception when publishing fails', function () {
+    $transport = new class implements TransportInterface {
+        public function publish(Update $update): PromiseInterface
+        {
+            return reject(new RuntimeException('☠️'));
+        }
+
+        public function subscribe(callable $callback): void
+        {
+        }
+
+        public function unsubscribe(callable $callback): void
+        {
+        }
+
+        public function reconciliate(string $lastEventID): Generator
+        {
+        }
+    };
+    $controller = new PublishController();
+    $app = new App(
+        new TokenExtractorMiddleware(
+            jwt_config()->parser(),
+            jwt_config()->validator(),
+        ),
+        new HttpExceptionConverterMiddleware(),
+        $controller,
+    );
+    $hub = new Hub($app, $transport);
+    $controller->setHub($hub);
+
+    // Given
+    $jwt = create_jwt(['mercure' => ['publish' => ['*']]]);
+    $request = new ServerRequest(
+        'POST',
+        '/.well-known/mercure',
+        [
+            'Authorization' => "Bearer $jwt",
+            'Content-Type' => 'application/x-www-form-urlencoded',
+        ],
+        body: 'topic=/foo&topic=/bar&data=foobar&private=true&id=' . Ulid::generate(),
+    );
+
+    // When
+    $response = handle($app, $request);
+
+    // Then
+    expect($response->getStatusCode())->toBe(StatusCodeInterface::STATUS_SERVICE_UNAVAILABLE)
+        ->and((string) $response->getBody())->toBeEmpty();
+});

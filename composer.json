@@ -21,6 +21,7 @@
         "nyholm/dsn": "^2.0",
         "phpdocumentor/reflection-docblock": "^5.3",
         "react/async": "^4.0.0",
+        "react/promise-timer": "^1.10",
         "rize/uri-template": "^0.3.4",
         "symfony/console": "^5.4.0|^6.0.0",
         "symfony/dotenv": "^5.4.0|^6.0.0",

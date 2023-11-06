@@ -7,6 +7,7 @@ namespace Freddie\Hub\Transport\Redis;
 use Clue\React\Redis\Client;
 use Evenement\EventEmitter;
 use Evenement\EventEmitterInterface;
+use Freddie\Hub\Hub;
 use Freddie\Hub\Transport\TransportInterface;
 use Freddie\Message\Update;
 use Generator;
@@ -14,6 +15,7 @@ use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+use function Freddie\maybeTimeout;
 use function React\Async\await;
 use function React\Promise\resolve;
 
@@ -41,8 +43,26 @@ final class RedisTransport implements TransportInterface
             'trimInterval' => 0.0,
             'channel' => 'mercure',
             'key' => 'mercureUpdates',
+            'pingInterval' => 2.0,
+            'readTimeout' => 0.0,
         ]);
         $this->options = $resolver->resolve($options);
+        if ($this->options['pingInterval']) {
+            Loop::addPeriodicTimer($this->options['pingInterval'], fn () => $this->ping());
+        }
+    }
+
+    /**
+     * @codeCoverageIgnore
+     */
+    private function ping(): void
+    {
+        /** @var PromiseInterface $ping */
+        $ping = $this->redis->ping(); // @phpstan-ignore-line
+        $ping = maybeTimeout($ping, $this->options['readTimeout']);
+        $ping->then(
+            onRejected: Hub::die(...),
+        );
     }
 
     public function subscribe(callable $callback): void
@@ -61,7 +81,10 @@ final class RedisTransport implements TransportInterface
         $this->init();
         $payload = $this->serializer->serialize($update);
 
-        return $this->redis->publish($this->options['channel'], $payload) // @phpstan-ignore-line
+        /** @var PromiseInterface $promise */
+        $promise = $this->redis->publish($this->options['channel'], $payload); // @phpstan-ignore-line
+
+        return maybeTimeout($promise, $this->options['readTimeout'])
             ->then(fn () => $this->store($update))
             ->then(fn () => $update);
     }
