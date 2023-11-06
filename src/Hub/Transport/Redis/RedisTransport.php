@@ -44,7 +44,7 @@ final class RedisTransport implements TransportInterface
             'channel' => 'mercure',
             'key' => 'mercureUpdates',
             'pingInterval' => 2.0,
-            'readTimeout' => null,
+            'readTimeout' => 0.0,
         ]);
         $this->options = $resolver->resolve($options);
         if ($this->options['pingInterval']) {

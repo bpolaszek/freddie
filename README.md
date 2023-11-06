@@ -103,7 +103,7 @@ TRANSPORT_DSN="redis://127.0.0.1:6379" ./bin/freddie
 
 Optional parameters you can pass in the DSN's query string:
 - `pingInterval` - regularly ping Redis connection, which will help detect outages (default `2.0`)
-- `readTimeout` - max duration in seconds of a ping or publish request (default `null`)
+- `readTimeout` - max duration in seconds of a ping or publish request (default `0.0`: considered disabled)
 
 _Alternatively, you can set this variable into `.env.local`._
 

@@ -61,7 +61,7 @@ function extract_last_event_id(ServerRequestInterface $request): ?string
  * @param PromiseInterface<T> $promise
  * @return PromiseInterface<T>
  */
-function maybeTimeout(PromiseInterface $promise, ?float $time = null): PromiseInterface
+function maybeTimeout(PromiseInterface $promise, float $time = 0.0): PromiseInterface
 {
-    return null === $time ? $promise : timeout($promise, $time);
+    return 0.0 === $time ? $promise : timeout($promise, $time);
 }
