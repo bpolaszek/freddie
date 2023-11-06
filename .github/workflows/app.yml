@@ -73,6 +73,8 @@ jobs:
         transport:
           - "php://localhost?size=10000"
           - "redis://localhost?size=10000&trimInterval=0.5&pingInterval=0"
+          - "redis://localhost?size=10000&trimInterval=0.5&pingInterval=0.1"
+          - "redis://localhost?size=10000&trimInterval=0.5&pingInterval=0.1&readTimeout=2"
     steps:
       - name: Checkout
         uses: actions/checkout@v2
