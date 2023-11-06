@@ -7,10 +7,12 @@ namespace Freddie;
 use Freddie\Helper\FlatQueryParser;
 use Freddie\Helper\TopicHelper;
 use Psr\Http\Message\ServerRequestInterface;
+use React\Promise\PromiseInterface;
 
 use function BenTools\QueryString\query_string;
 use function in_array;
 use function is_string;
+use function React\Promise\Timer\timeout;
 use function settype;
 use function strtolower;
 use function trim;
@@ -52,4 +54,14 @@ function extract_last_event_id(ServerRequestInterface $request): ?string
         ?? $qs->getParam('last-event-id')
         ?? $qs->getParam('LAST-EVENT-ID')
         ?? null;
+}
+
+/**
+ * @template T
+ * @param PromiseInterface<T> $promise
+ * @return PromiseInterface<T>
+ */
+function maybeTimeout(PromiseInterface $promise, ?float $time = null): PromiseInterface
+{
+    return null === $time ? $promise : timeout($promise, $time);
 }
