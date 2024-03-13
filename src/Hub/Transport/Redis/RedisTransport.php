@@ -77,8 +77,9 @@ final class RedisTransport implements TransportInterface
         /** @var PromiseInterface<StreamingClient> $promise */
         $promise = $methodToInvade->invoke($this->subscriber);
         $promise->then(function (StreamingClient $redis) {
-            $e = new RuntimeException('Redis connection was unexpectedly closed.');
-            $redis->on('close', fn () => Hub::die($e));
+            $redis->on('close', fn () => Hub::die(
+                new RuntimeException('Redis connection was unexpectedly closed.')
+            ));
         });
         $this->eventEmitter->on('mercureUpdate', $callback);
     }
