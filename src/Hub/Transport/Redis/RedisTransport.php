@@ -110,11 +110,14 @@ final class RedisTransport implements TransportInterface
         }
     }
 
+    /**
+     * @return PromiseInterface<null>
+     */
     private function store(Update $update): PromiseInterface
     {
         $this->init();
         if ($this->options['size'] <= 0) {
-            return resolve();
+            return resolve(null);
         }
 
         // @phpstan-ignore-next-line
