@@ -27,7 +27,7 @@ final class RedisTransportFactory implements TransportFactoryInterface
     public function create(string $dsn): TransportInterface
     {
         $parsed = DsnParser::parse($dsn);
-        $redis = $subscriber = new RedisClient($dsn);
+        $redis = new RedisClient($dsn);
         $subscriber = new RedisClient($dsn); // Create a 2nd, blocking connection to receive updates
 
         return new RedisTransport(
