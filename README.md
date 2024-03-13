@@ -15,7 +15,7 @@ See what features are covered and what aren't (yet) [here](#feature-coverage).
 
 ## Installation
 
-PHP 8.1 is required to run the hub.
+PHP 8.1+ is required to run the hub.
 
 ### As a standalone Mercure hub
 
