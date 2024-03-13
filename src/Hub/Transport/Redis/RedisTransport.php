@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Freddie\Hub\Transport\Redis;
 
-use Clue\React\Redis\Client;
+use Clue\React\Redis\Io\StreamingClient;
+use Clue\React\Redis\RedisClient;
 use Evenement\EventEmitter;
 use Evenement\EventEmitterInterface;
 use Freddie\Hub\Hub;
@@ -13,6 +14,8 @@ use Freddie\Message\Update;
 use Generator;
 use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
+use ReflectionMethod;
+use RuntimeException;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 use function Freddie\maybeTimeout;
@@ -31,8 +34,8 @@ final class RedisTransport implements TransportInterface
      * @param array<string, mixed> $options
      */
     public function __construct(
-        public readonly Client $subscriber,
-        public readonly Client $redis,
+        public readonly RedisClient $subscriber,
+        public readonly RedisClient $redis,
         private readonly RedisSerializer $serializer = new RedisSerializer(),
         private readonly EventEmitterInterface $eventEmitter = new EventEmitter(),
         array $options = [],
@@ -48,17 +51,18 @@ final class RedisTransport implements TransportInterface
         ]);
         $this->options = $resolver->resolve($options);
         if ($this->options['pingInterval']) {
-            Loop::addPeriodicTimer($this->options['pingInterval'], fn () => $this->ping());
+            Loop::addPeriodicTimer($this->options['pingInterval'], fn () => $this->ping($this->subscriber));
+            Loop::addPeriodicTimer($this->options['pingInterval'], fn () => $this->ping($this->redis));
         }
     }
 
     /**
      * @codeCoverageIgnore
      */
-    private function ping(): void
+    private function ping(RedisClient $client): void
     {
         /** @var PromiseInterface $ping */
-        $ping = $this->redis->ping(); // @phpstan-ignore-line
+        $ping = $client->ping(); // @phpstan-ignore-line
         $ping = maybeTimeout($ping, $this->options['readTimeout']);
         $ping->then(
             onRejected: Hub::die(...),
@@ -67,7 +71,15 @@ final class RedisTransport implements TransportInterface
 
     public function subscribe(callable $callback): void
     {
+        static $methodToInvade;
+        $methodToInvade ??= new ReflectionMethod($this->subscriber, 'client');
         $this->init();
+        /** @var PromiseInterface<StreamingClient> $promise */
+        $promise = $methodToInvade->invoke($this->subscriber);
+        $promise->then(function (StreamingClient $redis) {
+            $e = new RuntimeException('Redis connection was unexpectedly closed.');
+            $redis->on('close', fn () => Hub::die($e));
+        });
         $this->eventEmitter->on('mercureUpdate', $callback);
     }
 

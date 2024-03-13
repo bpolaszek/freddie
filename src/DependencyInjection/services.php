@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Freddie\DependencyInjection;
 
-use Clue\React\Redis\Factory;
 use DateTimeZone;
 use Evenement\EventEmitter;
 use Evenement\EventEmitterInterface;
@@ -120,9 +119,6 @@ return static function (ContainerConfigurator $container) {
 
     $services
         ->alias(EventEmitterInterface::class, EventEmitter::class);
-
-    $services
-        ->set(Factory::class);
 
     $services
         ->set(Configuration::class)

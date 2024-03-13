@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Freddie\Hub\Transport\Redis;
 
+use Clue\React\Redis\RedisClient;
 use Freddie\Hub\Transport\TransportFactoryInterface;
 use Freddie\Hub\Transport\TransportInterface;
-use Clue\React\Redis\Factory;
 use Nyholm\Dsn\DsnParser;
 
 use function max;
@@ -14,7 +14,6 @@ use function max;
 final class RedisTransportFactory implements TransportFactoryInterface
 {
     public function __construct(
-        private Factory $factory = new Factory(),
         private RedisSerializer $serializer = new RedisSerializer(),
     ) {
     }
@@ -28,8 +27,8 @@ final class RedisTransportFactory implements TransportFactoryInterface
     public function create(string $dsn): TransportInterface
     {
         $parsed = DsnParser::parse($dsn);
-        $redis = $this->factory->createLazyClient($dsn);
-        $subscriber = $this->factory->createLazyClient($dsn); // Create a 2nd, blocking connection to receive updates
+        $redis = $subscriber = new RedisClient($dsn);
+        $subscriber = new RedisClient($dsn); // Create a 2nd, blocking connection to receive updates
 
         return new RedisTransport(
             $subscriber,

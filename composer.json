@@ -15,7 +15,7 @@
         "ext-iconv": "*",
         "bentools/querystring": "^1.1",
         "clue/framework-x": "dev-main#cfe017426d8acc7a92b5893a501728e034a873cc",
-        "clue/redis-react": "^2.5",
+        "clue/redis-react": "^3@dev",
         "doctrine/annotations": "^1.0",
         "lcobucci/jwt": "^4.1",
         "nyholm/dsn": "^2.0",
