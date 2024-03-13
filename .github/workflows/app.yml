@@ -9,7 +9,7 @@ on:
 jobs:
   code-style:
     name: Code Style & Static Analysis
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         php:
@@ -40,7 +40,7 @@ jobs:
 
   unit-tests:
     name: Unit tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         php:
@@ -71,7 +71,7 @@ jobs:
 
   integration-tests:
     name: Integration tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     services:
       redis:
         image: redis:6.0
