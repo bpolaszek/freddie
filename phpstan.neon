@@ -2,8 +2,3 @@ parameters:
     level: 8
     paths:
         - src
-
-    ignoreErrors:
-        - '#React\\Promise\\PromiseInterface is not generic#'
-        - '#Unable to resolve the template type T in call to function React\\Promise\\Timer\\timeout#'
-        - '#Unable to resolve the template type T in call to function Freddie\\maybeTimeout#'
