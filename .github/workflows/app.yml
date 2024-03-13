@@ -10,6 +10,12 @@ jobs:
   code-style:
     name: Code Style & Static Analysis
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        php:
+          - 8.1
+          - 8.2
+          - 8.3
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -17,8 +23,8 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.1
-          extensions: mbstring, pcntl
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, pcntl, curl, zip
 
       - name: Validate composer.json and composer.lock
         run: composer validate
@@ -35,6 +41,12 @@ jobs:
   unit-tests:
     name: Unit tests
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        php:
+          - 8.1
+          - 8.2
+          - 8.3
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -42,7 +54,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.1
+          php-version: ${{ matrix.php }}
           extensions: mbstring, pcntl, curl, zip
           coverage: pcov
 
@@ -50,8 +62,6 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Run tests
-        env:
-          TRANSPORT_DSN: ${{ matrix.transport }}
         run: vendor/bin/pest --testsuite='Unit tests' --coverage --coverage-clover=coverage.xml
 
       - name: Upload coverage to Codecov
@@ -75,6 +85,10 @@ jobs:
           - "redis://localhost?size=10000&trimInterval=0.5&pingInterval=0"
           - "redis://localhost?size=10000&trimInterval=0.5&pingInterval=0.1"
           - "redis://localhost?size=10000&trimInterval=0.5&pingInterval=0.1&readTimeout=2"
+        php:
+          - 8.1
+          - 8.2
+          - 8.3
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -82,7 +96,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.1
+          php-version: ${{ matrix.php }}
           extensions: mbstring, pcntl, curl, zip
           coverage: pcov
 
