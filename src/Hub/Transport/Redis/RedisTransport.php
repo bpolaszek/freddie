@@ -13,6 +13,7 @@ use Freddie\Message\Update;
 use Generator;
 use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
+use RuntimeException;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 use function Freddie\maybeTimeout;
@@ -50,6 +51,7 @@ final class RedisTransport implements TransportInterface
         if ($this->options['pingInterval']) {
             Loop::addPeriodicTimer($this->options['pingInterval'], fn () => $this->ping());
         }
+        $this->subscriber->on('unsubscribe', fn () => Hub::die(new RuntimeException('Redis connection lost')));
     }
 
     /**
