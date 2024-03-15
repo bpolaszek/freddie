@@ -16,7 +16,8 @@ it('dispatches published updates', function () {
     $eventEmitter = new EventEmitter();
     $transport = new RedisTransport(
         new RedisClientStub($storage, $eventEmitter),
-        new RedisClientStub($storage, $eventEmitter)
+        new RedisClientStub($storage, $eventEmitter),
+        options: ['pingInterval' => 0.0],
     );
 
     // Given
@@ -40,7 +41,7 @@ it('dispatches published updates', function () {
 
 it('performs state reconciliation', function () {
     $client = new RedisClientStub();
-    $transport = new RedisTransport($client, clone $client, options: ['size' => 3]);
+    $transport = new RedisTransport($client, clone $client, options: ['pingInterval' => 0.0, 'size' => 3]);
 
     // Given
     $updates = [
@@ -81,7 +82,11 @@ it('performs state reconciliation', function () {
 
 it('periodically trims the database', function () {
     $client = new RedisClientStub();
-    $transport = new RedisTransport($client, clone $client, options: ['size' => 3, 'trimInterval' => 0.01]);
+    $transport = new RedisTransport($client, clone $client, options: [
+        'pingInterval' => 0.0,
+        'size' => 3,
+        'trimInterval' => 0.01
+    ]);
 
     // Given
     $updates = [
