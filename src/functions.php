@@ -57,7 +57,7 @@ function extract_last_event_id(ServerRequestInterface $request): ?string
         if ($lastEventId !== null) {
             trigger_deprecation(
                 'freddie/mercure-x',
-                '0.3',
+                '1.0',
                 'Using "Last-Event-ID" query parameter is deprecated, use "lastEventID" instead.',
             );
         }
