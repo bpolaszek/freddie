@@ -85,7 +85,7 @@ final class RedisTransport implements TransportInterface
         $promise = $this->redis->publish($this->options['channel'], $payload); // @phpstan-ignore-line
 
         return maybeTimeout($promise, $this->options['readTimeout'])
-            ->then(fn () => $this->store($update))
+            ->then(fn () => $this->store($payload))
             ->then(fn () => $update);
     }
 
@@ -113,7 +113,7 @@ final class RedisTransport implements TransportInterface
     /**
      * @return PromiseInterface<null>
      */
-    private function store(Update $update): PromiseInterface
+    private function store(string $payload): PromiseInterface
     {
         $this->init();
         if ($this->options['size'] <= 0) {
@@ -121,7 +121,7 @@ final class RedisTransport implements TransportInterface
         }
 
         // @phpstan-ignore-next-line
-        return $this->redis->rpush($this->options['key'], $this->serializer->serialize($update));
+        return $this->redis->rpush($this->options['key'], $payload);
     }
 
     private function init(): void
