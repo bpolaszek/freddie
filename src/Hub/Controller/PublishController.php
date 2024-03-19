@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Freddie\Hub\Controller;
 
+use Fig\Http\Message\StatusCodeInterface;
 use Freddie\Helper\FlatQueryParser;
 use Freddie\Hub\HubControllerInterface;
 use Freddie\Hub\HubInterface;
@@ -13,8 +14,10 @@ use Lcobucci\JWT\UnencryptedToken;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
+use React\Promise\Timer\TimeoutException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Uid\Ulid;
 use Throwable;
@@ -74,6 +77,8 @@ final class PublishController implements HubControllerInterface
 
         try {
             await($this->hub->publish($update));
+        } catch (TimeoutException) {
+            throw new HttpException(StatusCodeInterface::STATUS_GATEWAY_TIMEOUT);
         } catch (Throwable) {
             throw new ServiceUnavailableHttpException();
         }

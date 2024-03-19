@@ -19,11 +19,13 @@ use Psr\Http\Message\ResponseInterface;
 use React\Http\Message\Response;
 use React\Http\Message\ServerRequest;
 use React\Promise\PromiseInterface;
+use React\Promise\Timer\TimeoutException;
 use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Uid\Ulid;
+use Throwable;
 
 use function Freddie\Tests\create_jwt;
 use function Freddie\Tests\handle;
@@ -210,11 +212,15 @@ it('yells when update cannot be published', function () {
     'Your rights are not sufficient to publish this update.'
 );
 
-it('throws a service unavailable exception when publishing fails', function () {
-    $transport = new class implements TransportInterface {
+it('complains when publishing fails', function (Throwable $exception, int $expectedStatusCode) {
+    $transport = new class ($exception) implements TransportInterface {
+        public function __construct(private Throwable $exception)
+        {
+        }
+
         public function publish(Update $update): PromiseInterface
         {
-            return reject(new RuntimeException('☠️'));
+            return reject($this->exception);
         }
 
         public function subscribe(callable $callback): void
@@ -257,6 +263,15 @@ it('throws a service unavailable exception when publishing fails', function () {
     $response = handle($app, $request);
 
     // Then
-    expect($response->getStatusCode())->toBe(StatusCodeInterface::STATUS_SERVICE_UNAVAILABLE)
+    expect($response->getStatusCode())->toBe($expectedStatusCode)
         ->and((string) $response->getBody())->toBeEmpty();
+})->with(function () {
+    yield 'general error' => [
+        'exception' => new RuntimeException('☠️'),
+        'expectedStatusCode' => StatusCodeInterface::STATUS_SERVICE_UNAVAILABLE,
+    ];
+    yield 'timeout' => [
+        'exception' => new TimeoutException(0),
+        'expectedStatusCode' => StatusCodeInterface::STATUS_GATEWAY_TIMEOUT,
+    ];
 });
