@@ -85,9 +85,10 @@ it('extracts Last-Event-ID from request', function (ServerRequestInterface $requ
     ];
 });
 
-it('extracts Last-Event-ID from request using deprecated query parameter.', function (ServerRequestInterface $request, ?string $expected) {
-    expect(extract_last_event_id($request))->toBe($expected);
-})->with(function () {
+it(
+    'extracts Last-Event-ID from request using deprecated query parameter.',
+    fn (ServerRequestInterface $request, ?string $expected) => expect(extract_last_event_id($request))->toBe($expected)
+)->with(function () {
     yield [
         'request' => new ServerRequest('GET', '/.well-known/mercure?Last-Event-ID=foo'),
         'expected' => 'foo',
