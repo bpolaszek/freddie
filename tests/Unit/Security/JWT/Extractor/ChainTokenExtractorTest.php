@@ -15,24 +15,60 @@ it('extracts token either from cookies or authorization header', function (
     $extractor = new ChainTokenExtractor();
     expect($extractor->extract($request))->toBe($expected);
 })->with(function () {
+    $validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30._esyynAyo2Z6PyGe0mM_SuQ3c-C7sMQJ1YxVLvlj80A';
+
+    yield [
+        'request' => new ServerRequest('GET', '/.well-known/mercure', [
+            'Cookie' => 'mercureAuthorization=' . $validToken,
+        ]),
+        'expected' => $validToken,
+    ];
+    yield [
+        'request' => new ServerRequest('GET', '/.well-known/mercure?authorization=' . $validToken),
+        'expected' => $validToken,
+    ];
+    yield [
+        'request' => new ServerRequest('GET', '/.well-known/mercure', [
+            'Cookie' => 'mercureAuthorization=' . $validToken,
+            'Authorization' => 'Bearer foo',
+        ]),
+        'expected' => $validToken,
+    ];
+    yield [
+        'request' => new ServerRequest('GET', '/.well-known/mercure', [
+            'Cookie' => 'mercureAuthorization=foo',
+            'Authorization' => 'Bearer ' . $validToken,
+        ]),
+        'expected' => $validToken,
+    ];
+    yield [
+        'request' => new ServerRequest('GET', '/.well-known/mercure', [
+            'Authorization' => 'Bearer ' . $validToken,
+        ]),
+        'expected' => $validToken,
+    ];
     yield [
         'request' => new ServerRequest('GET', '/.well-known/mercure', [
             'Cookie' => 'mercureAuthorization=foobar',
         ]),
-        'expected' => 'foobar',
+        'expected' => null,
     ];
     yield [
         'request' => new ServerRequest('GET', '/.well-known/mercure', [
             'Cookie' => 'mercureAuthorization=foo',
             'Authorization' => 'Bearer bar',
         ]),
-        'expected' => 'foo',
+        'expected' => null,
     ];
     yield [
         'request' => new ServerRequest('GET', '/.well-known/mercure', [
             'Authorization' => 'Bearer foobar',
         ]),
-        'expected' => 'foobar',
+        'expected' => null,
+    ];
+    yield [
+        'request' => new ServerRequest('GET', '/.well-known/mercure?authorization=foobar'),
+        'expected' => null,
     ];
     yield [
         'request' => new ServerRequest('GET', '/.well-known/mercure'),

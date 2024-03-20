@@ -16,6 +16,7 @@ final class ChainTokenExtractor implements PSR7TokenExtractorInterface
      */
     public function __construct(
         private iterable $tokenExtractors = [
+            new QueryTokenExtractor(),
             new CookieTokenExtractor(),
             new AuthorizationHeaderTokenExtractor(),
         ],
