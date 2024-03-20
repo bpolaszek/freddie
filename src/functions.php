@@ -47,13 +47,23 @@ function nullify(mixed $value, ?string $cast = null): mixed
 function extract_last_event_id(ServerRequestInterface $request): ?string
 {
     $qs = query_string($request->getUri(), new FlatQueryParser());
+    $lastEventId = nullify($request->getHeaderLine('Last-Event-ID')) ?? $qs->getParam('lastEventID');
+    if (null === $lastEventId) {
+        $lastEventId = $qs->getParam('Last-Event-ID') ??
+            $qs->getParam('Last-Event-Id') ??
+            $qs->getParam('last-event-id') ??
+            $qs->getParam('LAST-EVENT-ID');
 
-    return nullify($request->getHeaderLine('Last-Event-ID'))
-        ?? $qs->getParam('Last-Event-ID')
-        ?? $qs->getParam('Last-Event-Id')
-        ?? $qs->getParam('last-event-id')
-        ?? $qs->getParam('LAST-EVENT-ID')
-        ?? null;
+        if ($lastEventId !== null) {
+            trigger_deprecation(
+                'freddie/mercure-x',
+                '1.0',
+                'Using "Last-Event-ID" query parameter is deprecated, use "lastEventID" instead.',
+            );
+        }
+    }
+
+    return $lastEventId;
 }
 
 /**
