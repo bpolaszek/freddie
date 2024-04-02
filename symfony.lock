@@ -169,9 +169,6 @@
     "react/stream": {
         "version": "v1.2.0"
     },
-    "ringcentral/psr7": {
-        "version": "1.3.0"
-    },
     "rize/uri-template": {
         "version": "0.3.4"
     },
