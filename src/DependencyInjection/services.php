@@ -13,6 +13,7 @@ use Freddie\Hub\Controller\SubscribeController;
 use Freddie\Hub\Hub;
 use Freddie\Hub\HubControllerInterface;
 use Freddie\Hub\HubInterface;
+use Freddie\Hub\Middleware\CorsMiddleware;
 use Freddie\Hub\Middleware\HttpExceptionConverterMiddleware;
 use Freddie\Hub\Middleware\TokenExtractorMiddleware;
 use Freddie\Hub\Transport\TransportFactory;
@@ -111,6 +112,7 @@ return static function (ContainerConfigurator $container) {
     $services
         ->set(App::class)
         ->args([
+            service(CorsMiddleware::class),
             service(HttpExceptionConverterMiddleware::class),
             service(TokenExtractorMiddleware::class),
         ]);
@@ -123,6 +125,12 @@ return static function (ContainerConfigurator $container) {
 
     $services
         ->set(Factory::class);
+
+    $services
+        ->set(CorsMiddleware::class)
+        ->args([
+            param('env(string:default::CORS_ORIGINS)')
+        ]);
 
     $services
         ->set(Configuration::class)
