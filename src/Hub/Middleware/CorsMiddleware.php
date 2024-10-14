@@ -6,27 +6,30 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
 
-class CorsMiddleware
+final class CorsMiddleware
 {
     public function __construct(
-        private ?string $corsOrigin
-    )
-    {
-        if (!$this->corsOrigin) {
-            $this->corsOrigin = 'null';
-        }
+        private readonly ?string $corsOrigin = '*',
+    ) {
     }
 
     public function __invoke(
         ServerRequestInterface $request,
-        callable               $next
-    ): ResponseInterface
-    {
+        callable $next
+    ): ResponseInterface {
         $response = $next($request);
 
-        return $response->withAddedHeader('Access-Control-Allow-Origin', $this->corsOrigin)
+        $corsOrigin = $this->corsOrigin ?? $this->getOrigin($request);
+
+        return $response->withAddedHeader('Access-Control-Allow-Origin', $corsOrigin)
             ->withAddedHeader('Access-Control-Allow-Headers', '*')
             ->withAddedHeader('Access-Control-Allow-Methods', '*')
+            ->withAddedHeader('Access-Control-Allow-Credentials', 'true')
             ->withStatus(Response::STATUS_OK);
+    }
+
+    private function getOrigin(ServerRequestInterface $request): string
+    {
+        return $request->getHeaderLine('Origin') ?: 'null';
     }
 }
