@@ -9,7 +9,7 @@ on:
 jobs:
   code-style:
     name: Code Style & Static Analysis
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       max-parallel: 10
       fail-fast: false
@@ -47,7 +47,7 @@ jobs:
 
   unit-tests:
     name: Unit tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       max-parallel: 10
       fail-fast: false
@@ -84,7 +84,7 @@ jobs:
 
   integration-tests:
     name: Integration tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     services:
       redis:
         image: redis:7.0
