@@ -18,9 +18,10 @@ jobs:
           - 8.1
           - 8.2
           - 8.3
+          - 8.4
         experimental: [ false ]
         include:
-          -   php: '8.4'
+          -   php: '8.5'
               experimental: true
     continue-on-error: ${{ matrix.experimental }}
     steps:
@@ -56,9 +57,10 @@ jobs:
           - 8.1
           - 8.2
           - 8.3
+          - 8.4
         experimental: [ false ]
         include:
-          - php: '8.4'
+          - php: '8.5'
             experimental: true
     steps:
       - name: Checkout
@@ -98,6 +100,7 @@ jobs:
           - 8.1
           - 8.2
           - 8.3
+          - 8.4
         experimental: [ false ]
         transport:
           - "php://localhost?size=10000"
@@ -105,7 +108,7 @@ jobs:
           - "redis://localhost?size=10000&trimInterval=0.5&pingInterval=0.1"
           - "redis://localhost?size=10000&trimInterval=0.5&pingInterval=0.1&readTimeout=2"
         include:
-          - php: '8.4'
+          - php: '8.5'
             experimental: true
     steps:
       - name: Checkout
