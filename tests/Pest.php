@@ -1,57 +1,75 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Freddie\Tests;
 
-use FrameworkX\App;
-use Freddie\Hub\Middleware\TokenExtractorMiddleware;
+use Freddie\Message\Message;
 use Freddie\Security\JWT\Configuration\ConfigurationFactory;
 use Lcobucci\JWT\Configuration;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use ReflectionClass;
+use Symfony\Component\HttpFoundation\Request;
 
-function handle(App $app, ServerRequestInterface $request): ResponseInterface
-{
-    static $class, $method;
-    $class ??= new ReflectionClass($app);
-    $method ??= $class->getMethod('handleRequest');
-    $method->setAccessible(true);
+use function array_filter;
+use function BenTools\QueryString\query_string;
+use function bin2hex;
 
-    return $method->invoke($app, $request);
+/**
+ * @param array<string, mixed> $headers
+ * @param array<string, mixed> $cookies
+ * @internal
+ */
+function createSfRequest(
+    string $method,
+    string $uri,
+    array $headers = [],
+    array $cookies = [],
+    ?string $content = null,
+): Request {
+    $request = Request::create($uri, $method, content: $content);
+    $request->headers->replace($headers);
+    $request->cookies->replace($cookies);
+
+    return $request;
 }
 
-function with_token(ServerRequestInterface $request, string $token): ServerRequestInterface
-{
-    static $hydrater, $class, $method;
-    $hydrater ??= new TokenExtractorMiddleware();
-    $class ??= new ReflectionClass($hydrater);
-    $method ??= $class->getMethod('withToken');
-    $method->setAccessible(true);
-
-    return $method->invoke($hydrater, $request, $token);
-}
-
-function jwt_config(): Configuration
+function defaultJwtConfiguration(): Configuration
 {
     static $factory, $config;
     $factory ??= new ConfigurationFactory();
+    $config ??= $factory('HS256', bin2hex(random_bytes(16)));
 
-    return $config ??= $factory(
-        $_SERVER['JWT_ALGORITHM'],
-        \file_get_contents(\strtr($_SERVER['JWT_SECRET_KEY'], ['%kernel.project_dir%' => \dirname(__DIR__)])),
-        \file_get_contents(\strtr($_SERVER['JWT_PUBLIC_KEY'], ['%kernel.project_dir%' => \dirname(__DIR__)])),
-        $_SERVER['JWT_PASSPHRASE'],
-    );
+    return $config;
 }
 
-function create_jwt(array $claims): string
+/**
+ * @param array<string, mixed> $claims
+ */
+function createJWT(array $claims = [], ?Configuration $configuration = null): string
 {
-    $builder = jwt_config()->builder();
+    $configuration ??= defaultJwtConfiguration();
+    $builder = $configuration->builder();
     foreach ($claims as $key => $value) {
         $builder = $builder->withClaim($key, $value);
     }
 
-    return $builder->getToken(jwt_config()->signer(), jwt_config()->signingKey())->toString();
+
+    /** @var \Lcobucci\JWT\Signer\Key $verificationKey */
+    $verificationKey = $configuration->verificationKey();
+    $signer = $configuration->signer();
+
+    return $builder->getToken($signer, $verificationKey)->toString();
+}
+
+function stringifyMessage(Message $message): string
+{
+    $normalized = array_filter(
+        [
+            'id' => (string) $message->id,
+            'data' => $message->data,
+            'private' => $message->private,
+            'event' => $message->event,
+            'retry' => $message->retry,
+        ],
+        fn (mixed $value) => null !== $value
+    );
+
+        return (string) query_string($normalized);
 }

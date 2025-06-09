@@ -9,7 +9,7 @@ use DateTimeZone;
 /**
  * @codeCoverageIgnore
  */
-final class DateTimeZoneFactory
+final readonly class DateTimeZoneFactory
 {
     public function __invoke(): DateTimeZone
     {

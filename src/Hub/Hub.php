@@ -1,110 +1,100 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Freddie\Hub;
 
-use FrameworkX\App;
-use Freddie\Hub\Middleware\HttpExceptionConverterMiddleware;
-use Freddie\Hub\Transport\PHP\PHPTransport;
-use Freddie\Hub\Transport\TransportInterface;
+use Freddie\Message\Message;
 use Freddie\Message\Update;
 use Freddie\Subscription\Subscriber;
+use Freddie\Subscription\Subscription;
+use Freddie\Transport\TransportInterface;
 use Generator;
-use InvalidArgumentException;
-use React\EventLoop\Loop;
-use React\Promise\PromiseInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Throwable;
+use Symfony\Component\Uid\Ulid;
 
-use function array_key_exists;
-use function sprintf;
+use function connection_aborted;
 
-final class Hub implements HubInterface
+final readonly class Hub implements HubInterface
 {
-    public const DEFAULT_OPTIONS = [
-        'allow_anonymous' => true,
-    ];
-
     /**
-     * @var array<string, mixed>
+     * @var array{allow_anonymous: bool, subscriptions: bool}
      */
-    private array $options;
-
-    private bool $started = false;
+    public private(set) array $options;
 
     /**
-     * @codeCoverageIgnore
-     * @param array<string, mixed> $options
-     * @param iterable<HubControllerInterface> $controllers
+     * @param array{allow_anonymous?: bool, subscriptions?: bool} $options
      */
     public function __construct(
-        private App $app = new App(new HttpExceptionConverterMiddleware()),
-        private TransportInterface $transport = new PHPTransport(),
+        private(set) TransportInterface $transport,
         array $options = [],
-        iterable $controllers = [],
     ) {
         $resolver = new OptionsResolver();
-        $resolver->setDefaults(self::DEFAULT_OPTIONS);
+        $resolver->setDefaults(HubOptions::DEFAULTS);
         $resolver->setAllowedTypes('allow_anonymous', 'bool');
+        $resolver->setAllowedTypes('subscriptions', 'bool');
         $this->options = $resolver->resolve($options);
-        foreach ($controllers as $controller) {
-            $controller->setHub($this);
-            $method = $controller->getMethod();
-            $route = $controller->getRoute();
-            $this->app->{$method}($route, $controller);
+    }
+
+    public function publish(Update $update): void
+    {
+        $this->transport->push($update);
+    }
+
+    public function getUpdates(Subscriber $subscriber): Generator
+    {
+        $allowsAnonymous = $this->options['allow_anonymous'];
+        foreach ($this->transport->listen($subscriber->lastEventId) as $update) {
+            if (!$update->canBeReceived($subscriber->subscribedTopics, $subscriber->allowedTopics, $allowsAnonymous)) {
+                continue;
+            }
+            yield $update;
         }
-    }
-
-    /**
-     * @codeCoverageIgnore
-     */
-    public function run(): void
-    {
-        $this->started = true;
-        $this->app->run();
-    }
-
-    public function publish(Update $update): PromiseInterface
-    {
-        return $this->transport->publish($update)
-            ->then(function (Update $update) {
-                if (false === $this->started) {
-                    Loop::stop();
-                }
-
-                return $update;
-            });
     }
 
     public function subscribe(Subscriber $subscriber): void
     {
-        $this->transport->subscribe($subscriber);
+        $subscriptionsEnabled = $this->options['subscriptions'];
+        if (!$subscriptionsEnabled) {
+            return;
+        }
+
+        $this->transport->registerSubscriber($subscriber);
+        foreach ($subscriber->subscriptions as $subscription) {
+            $this->publish(new Update($subscription->id, new Message(data: (string) $subscription, private: true)));
+        }
     }
 
     public function unsubscribe(Subscriber $subscriber): void
     {
-        $this->transport->unsubscribe($subscriber);
-    }
-
-    public function reconciliate(string $lastEventID): Generator
-    {
-        return $this->transport->reconciliate($lastEventID);
-    }
-
-    public function getOption(string $name): mixed
-    {
-        if (!array_key_exists($name, $this->options)) {
-            throw new InvalidArgumentException(sprintf('Invalid option `%s`.', $name));
+        $subscriptionsEnabled = $this->options['subscriptions'];
+        if (!$subscriptionsEnabled) {
+            return;
         }
 
-        return $this->options[$name];
+        $subscriber->active = false;
+        $this->transport->unregisterSubscriber($subscriber);
+
+        foreach ($subscriber->subscriptions as $subscription) {
+            $this->publish(new Update($subscription->id, new Message(data: (string) $subscription, private: true)));
+        }
     }
 
-    public static function die(Throwable $e): never
+    public function getLastEventId(): ?Ulid
     {
-        Loop::stop();
+        return $this->transport->getLastEventId();
+    }
 
-        throw $e;
+    public function getSubscription(string $subscriptionIri): ?Subscription
+    {
+        return $this->transport->getSubscription($subscriptionIri);
+    }
+
+    public function getSubscriptions(?string $topic): iterable
+    {
+        return $this->transport->getSubscriptions($topic);
+    }
+
+    public function isConnectionAborted(): bool
+    {
+        return (bool) connection_aborted();
     }
 }

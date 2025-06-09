@@ -9,7 +9,7 @@ use Freddie\Helper\TopicHelper;
 use function Freddie\topic;
 use function is_string;
 
-final class Update
+final readonly class Update
 {
     /**
      * @var string[]
@@ -35,13 +35,7 @@ final class Update
             return false;
         }
 
-        foreach ($this->topics as $topic) {
-            if (!$this->checkTopicForPublication(topic($topic), $allowedTopics)) {
-                return false;
-            }
-        }
-
-        return true;
+        return array_all($this->topics, fn ($topic) => $this->checkTopicForPublication(topic($topic), $allowedTopics));
     }
 
     /**
@@ -67,7 +61,7 @@ final class Update
         TopicHelper $topic,
         array $subscribedTopics,
         ?array $allowedTopics,
-        bool $allowAnonymous
+        bool $allowAnonymous,
     ): bool {
         if (!$topic->match($subscribedTopics)) {
             return false;

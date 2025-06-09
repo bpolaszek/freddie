@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Freddie\Security\JWT\Extractor;
 
-use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Component\HttpFoundation\Request;
 
 use function array_map;
 use function implode;
-use function is_string;
 use function strlen;
 
-final class CookieTokenExtractor implements PSR7TokenExtractorInterface
+final readonly class CookieTokenExtractor implements TokenExtractorInterface
 {
     /**
      * @var string[]
@@ -27,17 +26,17 @@ final class CookieTokenExtractor implements PSR7TokenExtractorInterface
         $this->cookieNames = (array) $cookieName;
     }
 
-    public function extract(ServerRequestInterface $request): ?string
+    public function extract(Request $request): ?string
     {
         $token = implode(
             '.',
             array_map(
-                fn (string $name) => $request->getCookieParams()[$name] ?? '',
+                fn (string $name) => $request->cookies->get($name) ?? '',
                 $this->cookieNames,
             ),
         );
 
-        if (!is_string($token) || strlen($token) < 41) {
+        if (strlen($token) < 41) {
             return null;
         }
 

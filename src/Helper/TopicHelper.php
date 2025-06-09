@@ -7,14 +7,16 @@ namespace Freddie\Helper;
 use Rize\UriTemplate\UriTemplate;
 
 use function in_array;
+use function str_contains;
 
+/**
+ * @internal
+ */
 final class TopicHelper
 {
-    private string $topic;
-    private static self $instance;
-
     public function __construct(
-        private UriTemplate $uriTemplate,
+        private readonly UriTemplate $uriTemplate,
+        private string $topic = '',
     ) {
     }
 
@@ -64,10 +66,5 @@ final class TopicHelper
         $clone->topic = $topic;
 
         return $clone;
-    }
-
-    public static function instance(): self
-    {
-        return self::$instance ??= new self(new UriTemplate());
     }
 }

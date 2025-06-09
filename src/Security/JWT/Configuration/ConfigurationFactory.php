@@ -6,14 +6,19 @@ namespace Freddie\Security\JWT\Configuration;
 
 use InvalidArgumentException;
 use Lcobucci\JWT\Configuration;
+use Lcobucci\JWT\Encoding\JoseEncoder;
+use Lcobucci\JWT\Parser as ParserInterface;
 use Lcobucci\JWT\Signer;
+use Lcobucci\JWT\Token\Parser;
+use Lcobucci\JWT\Validation\Validator;
 
 use function is_readable;
 
-final class ConfigurationFactory
+final readonly class ConfigurationFactory
 {
     public function __construct(
-        private Signer\Ecdsa\SignatureConverter $signatureConverter = new Signer\Ecdsa\MultibyteStringConverter(),
+        private ParserInterface $parser = new Parser(new JoseEncoder()),
+        private Validator $validator = new Validator(),
     ) {
     }
 
@@ -23,7 +28,7 @@ final class ConfigurationFactory
         ?string $publicKey = null,
         ?string $passphrase = null,
     ): Configuration {
-        return match ($algorithm) {
+        $configuration = match ($algorithm) {
             'HS256', 'HS384', 'HS512' => $this->createSymmetricConfiguration($algorithm, $secretKey),
             default => $this->createAsymmetricConfiguration(
                 $algorithm,
@@ -32,6 +37,11 @@ final class ConfigurationFactory
                 $passphrase ?? '',
             )
         };
+
+        return $configuration
+            ->withParser($this->parser)
+            ->withValidator($this->validator)
+            ;
     }
 
     private function createSymmetricConfiguration(string $algorithm, string $secretKey): Configuration
@@ -65,9 +75,9 @@ final class ConfigurationFactory
             'RS256' => new Signer\Rsa\Sha256(),
             'RS384' => new Signer\Rsa\Sha384(),
             'RS512' => new Signer\Rsa\Sha512(),
-            'ES256' => new Signer\Ecdsa\Sha256($this->signatureConverter),
-            'ES384' => new Signer\Ecdsa\Sha384($this->signatureConverter),
-            'ES512' => new Signer\Ecdsa\Sha512($this->signatureConverter),
+            'ES256' => new Signer\Ecdsa\Sha256(),
+            'ES384' => new Signer\Ecdsa\Sha384(),
+            'ES512' => new Signer\Ecdsa\Sha512(),
         };
     }
 
@@ -75,7 +85,7 @@ final class ConfigurationFactory
     {
         return match (true) {
             is_readable($key) => Signer\Key\InMemory::file($key, $passphrase ?? ''),
-            default => Signer\Key\InMemory::plainText($key, $passphrase ?? ''), // @phpstan-ignore-line
+            default => Signer\Key\InMemory::plainText($key, $passphrase ?? '')
         };
     }
 }

@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Freddie\Security\JWT\Extractor;
 
-use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Traversable;
 
 use function iterator_to_array;
 
-final class ChainTokenExtractor implements PSR7TokenExtractorInterface
+final class ChainTokenExtractor implements TokenExtractorInterface
 {
     /**
-     * @param iterable<PSR7TokenExtractorInterface> $tokenExtractors
+     * @param iterable<TokenExtractorInterface> $tokenExtractors
      */
     public function __construct(
         private iterable $tokenExtractors = [
@@ -23,7 +23,7 @@ final class ChainTokenExtractor implements PSR7TokenExtractorInterface
     ) {
     }
 
-    public function extract(ServerRequestInterface $request): ?string
+    public function extract(Request $request): ?string
     {
         if ($this->tokenExtractors instanceof Traversable) {
             $this->tokenExtractors = iterator_to_array($this->tokenExtractors); // @codeCoverageIgnore

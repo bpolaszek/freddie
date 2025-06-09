@@ -1,123 +1,113 @@
 {
-    "name": "freddie/mercure-x",
-    "type": "project",
-    "description": "A Mercure Hub PHP implementation.",
-    "license": "GPL-3.0-only",
-    "authors": [{
-        "name": "Beno!t POLASZEK",
-        "email": "bpolaszek@gmail.com"
-    }],
-    "minimum-stability": "dev",
-    "prefer-stable": true,
-    "require": {
-        "php": ">=8.1",
-        "ext-ctype": "*",
-        "ext-iconv": "*",
-        "bentools/querystring": "^1.1",
-        "clue/framework-x": "dev-main#cfe017426d8acc7a92b5893a501728e034a873cc",
-        "clue/redis-react": "^2.5",
-        "doctrine/annotations": "^1.0",
-        "lcobucci/jwt": "^4.1",
-        "nyholm/dsn": "^2.0",
-        "phpdocumentor/reflection-docblock": "^5.3",
-        "react/async": "^4.0.0",
-        "react/promise-timer": "^1.10",
-        "rize/uri-template": "^0.3.4",
-        "symfony/console": "^5.4.0|^6.0.0|^7.0.0",
-        "symfony/deprecation-contracts": "^3.1",
-        "symfony/dotenv": "^5.4.0|^6.0.0|^7.0.0",
-        "symfony/flex": "^1.17|^2",
-        "symfony/framework-bundle": "^5.4.0|^6.0.0|^7.0.0",
-        "symfony/options-resolver": "^5.4.0|^6.0.0|^7.0.0",
-        "symfony/property-access": "^5.4.0|^6.0.0|^7.0.0",
-        "symfony/property-info": "^5.4.0|^6.0.0|^7.0.0",
-        "symfony/runtime": "^5.4.0|^6.0.0|^7.0.0",
-        "symfony/serializer": "^5.4.0|^6.0.0|^7.0.0",
-        "symfony/uid": "^5.4.0|^6.0.0|^7.0.0",
-        "symfony/yaml": "^5.4.0|^6.0.0|^7.0.0"
+  "name": "freddie/mercure-x",
+  "type": "project",
+  "description": "A Mercure Hub PHP implementation.",
+  "license": "MIT",
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "require": {
+    "php": ">=8.4",
+    "ext-ctype": "*",
+    "ext-iconv": "*",
+    "ext-redis": "*",
+    "bentools/querystring": "^1.3.1",
+    "bentools/reflection-plus": "^1.0",
+    "bentools/uri-factory": "^2.3.1",
+    "lcobucci/clock": "^3.3.1",
+    "lcobucci/jwt": "^5.5",
+    "nyholm/dsn": "^2.0.1",
+    "nyholm/psr7": "^1.8.2",
+    "phpdocumentor/reflection-docblock": "^5.6.2",
+    "phpstan/phpdoc-parser": "^2.1",
+    "rize/uri-template": "^0.4.0",
+    "runtime/frankenphp-symfony": "^0.2.0",
+    "symfony/console": "^7.3",
+    "symfony/dotenv": "^7.3",
+    "symfony/flex": "^2.7.1",
+    "symfony/framework-bundle": "^7.3",
+    "symfony/http-client": "^7.3",
+    "symfony/monolog-bundle": "^3.10",
+    "symfony/options-resolver": "^7.3",
+    "symfony/property-access": "^7.3",
+    "symfony/property-info": "^7.3",
+    "symfony/runtime": "^7.3",
+    "symfony/serializer": "^7.3",
+    "symfony/string": "^7.3",
+    "symfony/uid": "^7.3",
+    "symfony/yaml": "^7.3"
+  },
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": true,
+      "php-http/discovery": true,
+      "symfony/flex": true,
+      "symfony/runtime": true
     },
-    "require-dev": {
-        "clue/reactphp-eventsource": "^1.0.0",
-        "pestphp/pest": "^1.21",
-        "phpstan/phpstan": "^1.2",
-        "react/child-process": "^0.6.4",
-        "ringcentral/psr7": "^1.3",
-        "squizlabs/php_codesniffer": "^3.6",
-        "symfony/http-client": "^5.4.0|^6.0.0|^7.0.0",
-        "symfony/process": "^5.4.0|^6.0.0|^7.0.0"
+    "bump-after-update": true,
+    "sort-packages": true
+  },
+  "autoload": {
+    "psr-4": {
+      "Freddie\\": "src/"
     },
-    "config": {
-        "optimize-autoloader": true,
-        "preferred-install": {
-            "*": "dist"
-        },
-        "sort-packages": true,
-        "allow-plugins": {
-            "pestphp/pest-plugin": true,
-            "symfony/flex": true,
-            "symfony/runtime": true
-        }
-    },
-    "autoload": {
-        "psr-4": {
-            "Freddie\\": "src"
-        },
-        "files": [
-            "src/functions.php"
-        ]
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Freddie\\Tests\\": "tests"
-        }
-    },
-    "bin": ["bin/freddie"],
-    "scripts": {
-        "post-install-cmd": [
-            "bin/freddie cache:clear"
-        ],
-        "post-update-cmd": [
-            "bin/freddie cache:clear"
-        ],
-        "phpstan:analyze": "vendor/bin/phpstan analyse",
-        "linter:check": "vendor/bin/phpcs",
-        "linter:fix": "vendor/bin/phpcbf",
-        "tests:unit:run": "vendor/bin/pest --testsuite='Unit tests'",
-        "tests:integration:run": "vendor/bin/pest --testsuite='Integration tests'",
-        "tests:run": [
-            "@tests:integration:run",
-            "@tests:unit:run"
-        ],
-        "tests:run:with-coverage": [
-            "@tests:integration:run",
-            "@tests:unit:run --coverage --min=100"
-        ],
-        "ci:check": [
-            "composer validate",
-            "@linter:check",
-            "@phpstan:analyze",
-            "@tests:run:with-coverage"
-        ]
-    },
-    "conflict": {
-        "symfony/symfony": "*"
-    },
-    "extra": {
-        "symfony": {
-            "allow-contrib": false
-        }
-    },
-    "keywords": [
-        "mercure",
-        "pubsub",
-        "publish",
-        "subscribe",
-        "SSE",
-        "server-sent events",
-        "http",
-        "react",
-        "reactphp",
-        "async",
-        "framework x"
+    "files": [
+      "src/functions.php"
     ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Freddie\\Tests\\": "tests/"
+    }
+  },
+  "replace": {
+    "symfony/polyfill-ctype": "*",
+    "symfony/polyfill-iconv": "*",
+    "symfony/polyfill-php72": "*",
+    "symfony/polyfill-php73": "*",
+    "symfony/polyfill-php74": "*",
+    "symfony/polyfill-php80": "*",
+    "symfony/polyfill-php81": "*",
+    "symfony/polyfill-php82": "*"
+  },
+  "scripts": {
+    "auto-scripts": {
+      "cache:clear": "symfony-cmd",
+      "assets:install %PUBLIC_DIR%": "symfony-cmd"
+    },
+    "post-install-cmd": [
+      "@auto-scripts"
+    ],
+    "post-update-cmd": [
+      "@auto-scripts"
+    ],
+    "types:check": "vendor/bin/phpstan analyse",
+    "style:check": "vendor/bin/phpcs",
+    "style:fix": "vendor/bin/phpcbf",
+    "tests:run": "vendor/bin/pest",
+    "ci:check": [
+      "composer validate",
+      "@style:check",
+      "@types:check",
+      "@tests:run --coverage --min=100"
+    ]
+  },
+  "conflict": {
+    "symfony/symfony": "*"
+  },
+  "extra": {
+    "symfony": {
+      "allow-contrib": false,
+      "require": "^7.3"
+    }
+  },
+  "require-dev": {
+    "mockery/mockery": "^1.6.12",
+    "pestphp/pest": "^3.8.2",
+    "phpstan/phpstan": "^2.1.17",
+    "squizlabs/php_codesniffer": "^3.13",
+    "symfony/debug-bundle": "^7.3",
+    "symfony/maker-bundle": "^1.63",
+    "symfony/stopwatch": "^7.3",
+    "symfony/web-profiler-bundle": "^7.3"
+  }
 }

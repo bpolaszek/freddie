@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Freddie\Tests\Unit;
 
-use Psr\Http\Message\ServerRequestInterface;
-use RingCentral\Psr7\ServerRequest;
+use Symfony\Component\Uid\Ulid;
 
-use function Freddie\extract_last_event_id;
+use function Freddie\fromUrn;
 use function Freddie\is_truthy;
 use function Freddie\nullify;
+use function Freddie\urn;
 
 it('is truthy', function (mixed $input, bool $expected) {
     expect(is_truthy($input))->toBe($expected);
@@ -56,53 +56,19 @@ it('nullifies stuff', function (mixed $input, ?string $cast, mixed $expected) {
     yield [$obj, null, $obj];
 });
 
-it('extracts Last-Event-ID from request', function (ServerRequestInterface $request, ?string $expected) {
-    expect(extract_last_event_id($request))->toBe($expected);
-})->with(function () {
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure', ['Last-Event-ID' => 'foo']),
-        'expected' => 'foo',
-    ];
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure', ['Last-Event-Id' => 'foo']),
-        'expected' => 'foo',
-    ];
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure', ['last-event-id' => 'foo']),
-        'expected' => 'foo',
-    ];
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure', ['LAST-EVENT-ID' => 'foo']),
-        'expected' => 'foo',
-    ];
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure?lastEventID=foo'),
-        'expected' => 'foo',
-    ];
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure'),
-        'expected' => null,
-    ];
+it('returns an ULID as an URN', function () {
+    $ulid = new Ulid('01JWBP6W10ZCR91MSMGSF8FS1Y');
+    expect(urn($ulid))->toBe('urn:uuid:01971763-7020-fb30-90d3-34865e87e43e');
 });
 
-it(
-    'extracts Last-Event-ID from request using deprecated query parameter.',
-    fn (ServerRequestInterface $request, ?string $expected) => expect(extract_last_event_id($request))->toBe($expected)
-)->with(function () {
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure?Last-Event-ID=foo'),
-        'expected' => 'foo',
-    ];
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure?Last-Event-Id=foo'),
-        'expected' => 'foo',
-    ];
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure?last-event-id=foo'),
-        'expected' => 'foo',
-    ];
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure?LAST-EVENT-ID=foo'),
-        'expected' => 'foo',
-    ];
+it('instantiates an ULID from an URN', function () {
+    $urn = 'urn:uuid:01971763-7020-fb30-90d3-34865e87e43e';
+    $ulid = fromUrn($urn);
+    expect($ulid)->toBeInstanceOf(Ulid::class)
+        ->and($ulid->compare(new Ulid('01JWBP6W10ZCR91MSMGSF8FS1Y')))->toBe(0);
+});
+
+it('throws an exception if the URN is invalid', function () {
+    $urn = 'invalid-urn-format';
+    expect(fn () => fromUrn($urn))->toThrow(\InvalidArgumentException::class, 'Invalid URN format for Ulid');
 });
