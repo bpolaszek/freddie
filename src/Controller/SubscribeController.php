@@ -43,8 +43,8 @@ final readonly class SubscribeController
         $subscribedTopics = $this->extractSubscribedTopics($request);
         $allowedTopics = $this->extractAllowedTopics($request);
         $lastEventId = $this->extractLastEventID($request);
-        $userPaylod = $this->extractUserPayload($request);
-        $subscriber = new Subscriber($subscribedTopics, $allowedTopics, $lastEventId, $userPaylod);
+        $userPayload = $this->extractUserPayload($request);
+        $subscriber = new Subscriber($subscribedTopics, $allowedTopics, $lastEventId, $userPayload);
 
         $response = new StreamedResponse(function () use ($subscriber) {
             set_time_limit(0);
