@@ -1,0 +1,42 @@
+services:
+  frankenphp:
+    build: .
+    image: dunglas/frankenphp:latest
+    container_name: freddie_frankenphp
+    restart: unless-stopped
+    ports:
+      - "${FRANKENPHP_PORT:-80}:80"
+      - "${FRANKENPHP_HTTPS_PORT:-443}:443"
+    volumes:
+      - .:/app
+      - caddy_data:/data
+      - caddy_config:/config
+    working_dir: /app
+    environment:
+      - SERVER_NAME=:80
+      - FRANKENPHP_CONFIG=worker ./public/index.php
+      - APP_RUNTIME=Runtime\FrankenPhpSymfony\Runtime
+      - TRANSPORT_DSN=redis://redis
+    networks:
+      - freddie
+
+  redis:
+    image: redis:7-alpine
+    container_name: freddie_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server
+    networks:
+      - freddie
+
+volumes:
+  caddy_data:
+  caddy_config:
+  redis_data:
+
+networks:
+  freddie:
+    driver: bridge

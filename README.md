@@ -44,6 +44,15 @@ or listening to dispatched updates 👍
 
 The benefit is that publishing updates from your application no longer requires an HTTP request nor authentication to the hub, which is much faster.
 
+
+### Using Docker
+
+You can run Freddie using Docker. The following command will start the hub with its Redis instance:
+
+```bash
+docker compose up
+```
+
 ### Security 
 
 The default JWT key is `!ChangeThisMercureHubJWTSecretKey!` with a `HS256` signature. 
