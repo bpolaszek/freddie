@@ -7,15 +7,21 @@ use Freddie\Subscription\Subscriber;
 use Freddie\Subscription\Subscription;
 use Freddie\Transport\TransportInterface;
 use Generator;
+use Nyholm\Dsn\Configuration\Dsn;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Uid\Ulid;
 
 use function array_column;
 use function array_filter;
 use function array_find;
+use function array_map;
 use function Freddie\fromUrn;
 use function Freddie\topic;
+use function is_numeric;
 use function sprintf;
 use function substr;
 use function Symfony\Component\String\u;
@@ -49,12 +55,27 @@ final readonly class RedisTransport implements TransportInterface
      */
     public function __construct(
         private LazyRedis $lazyRedis,
-        private SerializerInterface $serializer,
+        private SerializerInterface $serializer = new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
         array $options = [],
     ) {
         $resolver = new OptionsResolver();
-        $resolver->setDefaults(self::DEFAULT_OPTIONS);
-        $this->options = $resolver->resolve($options);
+        $this->options = $resolver
+            ->setDefaults(self::DEFAULT_OPTIONS)
+            ->setAllowedTypes('size', 'int')
+            ->setAllowedTypes('maxBufferedItemsPerStream', 'int')
+            ->setAllowedTypes('blockDurationMs', 'int')
+            ->setAllowedTypes('sleepDurationMs', 'int')
+            ->setAllowedTypes('maxIterations', 'int')
+            ->setIgnoreUndefined()
+            ->resolve($options);
+    }
+
+    public function withOptionsFromDsn(Dsn $parsedDsn): self
+    {
+        $options = array_filter($parsedDsn->getParameters(), fn (mixed $value) => null !== $value);
+        $options = array_map(fn (mixed $value) => is_numeric($value) ? (int) $value : $value, $options);
+
+        return new self($this->lazyRedis, $this->serializer, [...$this->options, ...$options]);
     }
 
     public function push(Update $update): void

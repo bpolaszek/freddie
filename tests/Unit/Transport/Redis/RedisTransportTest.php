@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Freddie\Tests\Unit\Transport\Redis;
 
+use BenTools\ReflectionPlus\Reflection;
 use Freddie\Message\Message;
 use Freddie\Message\Update;
 use Freddie\Subscription\Subscriber;
@@ -12,9 +13,8 @@ use Freddie\Transport\Redis\LazyRedis;
 use Freddie\Transport\Redis\RedisTransport;
 use Mockery;
 use Mockery\Mock;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Serializer;
+use Nyholm\Dsn\Configuration\Dsn;
+use Nyholm\Dsn\DsnParser;
 use Symfony\Component\Uid\Ulid;
 
 use function expect;
@@ -27,14 +27,42 @@ it('creates a RedisTransport with default options', function () {
     // @phpstan-ignore-next-line varTag.unresolvableType
     /** @var RedisStub&Mock $redis */
     $redis = Mockery::spy(new RedisStub());
-    $serializer = new Serializer([new ObjectNormalizer()], [new JsonEncoder()]);
 
     // When
-    $transport = new RedisTransport(LazyRedis::factory($redis, 'redis://p4ssw0rd@localhost'), $serializer);
+    $parsedDsn = DsnParser::parse('redis://p4ssw0rd@localhost');
+    $transport = new RedisTransport(LazyRedis::factory($parsedDsn, $redis));
 
     // Then
     $redis->shouldNotHaveReceived('connect');
     $redis->shouldNotHaveReceived('auth');
+
+    // When
+    $transport->push(new Update('foo', new Message(data: 'bar')));
+
+    // Then
+    $redis->shouldHaveReceived('connect');
+    $redis->shouldHaveReceived('auth');
+});
+
+it('creates a RedisTransport with custom options', function () {
+    // Given
+    // @phpstan-ignore-next-line varTag.unresolvableType
+    /** @var RedisStub&Mock $redis */
+    $redis = Mockery::spy(new RedisStub());
+
+    // When
+    $parsedDsn = DsnParser::parse('redis://p4ssw0rd@localhost?size=5000&trimInterval=30&stream=mercure&maxBufferedItemsPerStream=100&blockDurationMs=1000&sleepDurationMs=100&maxIterations=100000'); // @codingStandardsIgnoreLine
+    $transport = new RedisTransport(LazyRedis::factory($parsedDsn, $redis))->withOptionsFromDsn($parsedDsn);
+    $resolvedOptions = Reflection::property($transport, 'options')->getValue($transport);
+
+    // Then
+    expect($resolvedOptions)->toHaveCount(6)
+        ->and($resolvedOptions['stream'])->toEqual('mercure')
+        ->and($resolvedOptions['size'])->toEqual(5000)
+        ->and($resolvedOptions['maxBufferedItemsPerStream'])->toEqual(100)
+        ->and($resolvedOptions['blockDurationMs'])->toEqual(1000)
+        ->and($resolvedOptions['sleepDurationMs'])->toEqual(100)
+        ->and($resolvedOptions['maxIterations'])->toEqual(100000);
 
     // When
     $transport->push(new Update('foo', new Message(data: 'bar')));
@@ -49,8 +77,7 @@ it('publishes an update to Redis', function () {
     // @phpstan-ignore-next-line varTag.unresolvableType
     /** @var RedisStub&Mock $redis */
     $redis = Mockery::spy(new RedisStub());
-    $serializer = new Serializer([new ObjectNormalizer()], [new JsonEncoder()]);
-    $transport = new RedisTransport(LazyRedis::factory($redis), $serializer);
+    $transport = new RedisTransport(LazyRedis::factory(redis: $redis));
 
     // When
     $id = new Ulid('01JWB2RD507NWBR79PWB56VCFC');
@@ -95,9 +122,8 @@ it('subscribes to updates from Redis', function () {
     // @phpstan-ignore-next-line varTag.unresolvableType
     /** @var RedisStub&Mock $redis */
     $redis = Mockery::spy(new RedisStub());
-    $serializer = new Serializer([new ObjectNormalizer()], [new JsonEncoder()]);
     $options = ['maxIterations' => 2, 'sleepDurationMs' => 0];
-    $transport = new RedisTransport(LazyRedis::factory($redis), $serializer, $options);
+    $transport = new RedisTransport(LazyRedis::factory(redis: $redis), options: $options);
 
     // When
     $id = new Ulid('01JWB2RD507NWBR79PWB56VCFC');
@@ -137,8 +163,7 @@ it('returns the last event ID', function () {
     // @phpstan-ignore-next-line varTag.unresolvableType
     /** @var RedisStub&Mock $redis */
     $redis = Mockery::spy(new RedisStub());
-    $serializer = new Serializer([new ObjectNormalizer()], [new JsonEncoder()]);
-    $transport = new RedisTransport(LazyRedis::factory($redis), $serializer);
+    $transport = new RedisTransport(LazyRedis::factory(redis: $redis));
 
     // When
     $lastEventId = $transport->getLastEventId();
@@ -172,8 +197,7 @@ it('lists subscriptions', function () {
     // @phpstan-ignore-next-line varTag.unresolvableType
     /** @var RedisStub&Mock $redis */
     $redis = Mockery::spy(new RedisStub());
-    $serializer = new Serializer([new ObjectNormalizer()], [new JsonEncoder()]);
-    $transport = new RedisTransport(LazyRedis::factory($redis), $serializer);
+    $transport = new RedisTransport(LazyRedis::factory(redis: $redis));
 
     // When
     $subscriber1 = new Subscriber(['foo'], id: new Ulid('01JWB2RD507NWBR79PWB56VCFC'));
@@ -217,8 +241,7 @@ it('fetches a subscription', function () {
     // @phpstan-ignore-next-line varTag.unresolvableType
     /** @var RedisStub&Mock $redis */
     $redis = new RedisStub();
-    $serializer = new Serializer([new ObjectNormalizer()], [new JsonEncoder()]);
-    $transport = new RedisTransport(LazyRedis::factory($redis), $serializer);
+    $transport = new RedisTransport(LazyRedis::factory(redis: $redis));
     $subscriber = new Subscriber(['foo'], id: new Ulid('01JWB2RD507NWBR79PWB56VCFC'));
     $transport->registerSubscriber($subscriber);
 

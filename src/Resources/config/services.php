@@ -31,6 +31,8 @@ use Lcobucci\JWT\Validation\Constraint\LooseValidAt;
 use Lcobucci\JWT\Validation\Constraint\SignedWith;
 use Lcobucci\JWT\Validation\Validator;
 use Lcobucci\JWT\Validator as ValidatorInterface;
+use Nyholm\Dsn\Configuration\Dsn;
+use Nyholm\Dsn\DsnParser;
 use Psr\Clock\ClockInterface;
 use Redis;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -83,10 +85,19 @@ return static function (ContainerConfigurator $container) {
     $services
         ->set(LazyRedis::class)
         ->factory([LazyRedis::class, 'factory'])
-        ->arg('$dsn', param('freddie.transport_dsn'));
+        ->arg('$parsedDsn', service('freddie.transport.parsed_dsn'));
 
     // Redis
     $services->set(Redis::class, Redis::class);
+    $services
+        ->set('freddie.transport.parsed_dsn')
+        ->class(Dsn::class)
+        ->factory([DsnParser::class, 'parse'])
+        ->arg('$dsn', param('freddie.transport_dsn'));
+
+    $services
+        ->set(RedisTransport::class)
+        ->call('withOptionsFromDsn', [service('freddie.transport.parsed_dsn')], true);
 
     // lcobucci/jwt
     $services->set(JoseEncoder::class);
