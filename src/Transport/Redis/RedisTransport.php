@@ -37,7 +37,7 @@ final readonly class RedisTransport implements TransportInterface
         'size' => 1000,
         'maxBufferedItemsPerStream' => 1000,
         'blockDurationMs' => 5000,
-        'sleepDurationMs' => 1000,
+        'sleepDurationMs' => 100,
         'maxIterations' => PHP_INT_MAX,
     ];
 
