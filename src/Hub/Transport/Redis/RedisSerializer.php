@@ -10,7 +10,7 @@ use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 
-final class RedisSerializer
+final readonly class RedisSerializer
 {
     public function __construct(
         private SerializerInterface $serializer = new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),

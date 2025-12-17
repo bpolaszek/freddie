@@ -10,7 +10,7 @@ use Lcobucci\JWT\Signer;
 
 use function is_readable;
 
-final class ConfigurationFactory
+final readonly class ConfigurationFactory
 {
     public function __construct(
         private Signer\Ecdsa\SignatureConverter $signatureConverter = new Signer\Ecdsa\MultibyteStringConverter(),

@@ -6,10 +6,10 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
 
-final class CorsMiddleware
+final readonly class CorsMiddleware
 {
     public function __construct(
-        private readonly ?string $corsOrigin = '*',
+        private ?string $corsOrigin = '*',
     ) {
     }
 

@@ -9,7 +9,7 @@ use Freddie\Helper\TopicHelper;
 use function Freddie\topic;
 use function is_string;
 
-final class Update
+final readonly class Update
 {
     /**
      * @var string[]

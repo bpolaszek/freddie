@@ -11,16 +11,18 @@ use function str_contains;
 
 use const PHP_EOL;
 
-final class Message
+final readonly class Message
 {
+    public string $id;
+
     public function __construct(
-        public ?string $id = null,
+        ?string $id = null,
         public ?string $data = null,
         public bool $private = false,
         public ?string $event = null,
         public ?int $retry = null,
     ) {
-        $this->id ??= (string) new Ulid();
+        $this->id = $id ?? (string) new Ulid();
     }
 
     public function __toString(): string

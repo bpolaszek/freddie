@@ -7,7 +7,7 @@ namespace Freddie\Security\JWT\Configuration;
 use Lcobucci\JWT\Configuration;
 use Lcobucci\JWT\Signer\Key;
 
-final class VerificationKeyFactory
+final readonly class VerificationKeyFactory
 {
     public function __construct(
         private Configuration $configuration,

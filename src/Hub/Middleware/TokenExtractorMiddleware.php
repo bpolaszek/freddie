@@ -16,7 +16,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
-final class TokenExtractorMiddleware
+final readonly class TokenExtractorMiddleware
 {
     public function __construct(
         private Parser $parser = new Parser(new JoseEncoder()),

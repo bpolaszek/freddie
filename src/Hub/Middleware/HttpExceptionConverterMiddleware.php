@@ -9,7 +9,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
-final class HttpExceptionConverterMiddleware
+final readonly class HttpExceptionConverterMiddleware
 {
     public function __invoke(
         ServerRequestInterface $request,

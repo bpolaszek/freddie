@@ -9,10 +9,12 @@ use DateTimeZone;
 /**
  * @codeCoverageIgnore
  */
-final class DateTimeZoneFactory
+final readonly class DateTimeZoneFactory
 {
     public function __invoke(): DateTimeZone
     {
-        return new DateTimeZone(ini_get('date.timezone') ?: 'UTC');
+        static $dateTimeZone;
+
+        return $dateTimeZone ??= new DateTimeZone(ini_get('date.timezone') ?: 'UTC');
     }
 }
