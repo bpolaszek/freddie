@@ -38,7 +38,7 @@
     },
     "require-dev": {
         "clue/reactphp-eventsource": "^1.0.0",
-        "pestphp/pest": "^1.21",
+        "pestphp/pest": "^4.0",
         "phpstan/phpstan": "^1.2",
         "react/child-process": "^0.6.4",
         "ringcentral/psr7": "^1.3",
