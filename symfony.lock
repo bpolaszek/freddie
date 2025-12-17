@@ -50,9 +50,6 @@
     "filp/whoops": {
         "version": "2.14.4"
     },
-    "lcobucci/clock": {
-        "version": "2.1.0"
-    },
     "lcobucci/jwt": {
         "version": "4.1.5"
     },
