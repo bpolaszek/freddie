@@ -17,6 +17,10 @@ final class ConfigurationFactory
     ) {
     }
 
+    /**
+     * @param non-empty-string $secretKey
+     * @param non-empty-string|null $publicKey
+     */
     public function __invoke(
         string $algorithm,
         string $secretKey,
@@ -34,6 +38,9 @@ final class ConfigurationFactory
         };
     }
 
+    /**
+     * @param non-empty-string $secretKey
+     */
     private function createSymmetricConfiguration(string $algorithm, string $secretKey): Configuration
     {
         return Configuration::forSymmetricSigner(
@@ -42,6 +49,10 @@ final class ConfigurationFactory
         );
     }
 
+    /**
+     * @param non-empty-string $secretKey
+     * @param non-empty-string $publicKey
+     */
     private function createAsymmetricConfiguration(
         string $algorithm,
         string $secretKey,
@@ -71,11 +82,14 @@ final class ConfigurationFactory
         };
     }
 
+    /**
+     * @param non-empty-string $key
+     */
     private function getKey(string $key, ?string $passphrase = null): Signer\Key
     {
         return match (true) {
             is_readable($key) => Signer\Key\InMemory::file($key, $passphrase ?? ''),
-            default => Signer\Key\InMemory::plainText($key, $passphrase ?? ''), // @phpstan-ignore-line
+            default => Signer\Key\InMemory::plainText($key, $passphrase ?? ''),
         };
     }
 }

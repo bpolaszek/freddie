@@ -35,7 +35,7 @@ final class TokenExtractorMiddleware
 
     private function withToken(ServerRequestInterface $request, ?string $token): ServerRequestInterface
     {
-        if (null === $token) {
+        if (empty($token)) {
             return $request;
         }
 
