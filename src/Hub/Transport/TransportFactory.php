@@ -8,7 +8,7 @@ use Freddie\Hub\Transport\PHP\PHPTransportFactory;
 use Freddie\Hub\Transport\Redis\RedisTransportFactory;
 use InvalidArgumentException;
 
-final class TransportFactory
+final readonly class TransportFactory
 {
     /**
      * @param iterable<TransportFactoryInterface> $factories

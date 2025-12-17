@@ -11,7 +11,7 @@ use function implode;
 use function is_string;
 use function strlen;
 
-final class CookieTokenExtractor implements PSR7TokenExtractorInterface
+final readonly class CookieTokenExtractor implements PSR7TokenExtractorInterface
 {
     /**
      * @var string[]

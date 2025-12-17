@@ -26,14 +26,13 @@ use Freddie\Security\JWT\Configuration\ValidationConstraints;
 use Freddie\Security\JWT\Configuration\VerificationKeyFactory;
 use Freddie\Security\JWT\Extractor\ChainTokenExtractor;
 use Freddie\Security\JWT\Extractor\PSR7TokenExtractorInterface;
-use Lcobucci\Clock\Clock;
-use Lcobucci\Clock\SystemClock;
 use Lcobucci\JWT\Configuration;
 use Lcobucci\JWT\Signer;
 use Lcobucci\JWT\Signer\Key;
 use Lcobucci\JWT\Token\Parser;
 use Lcobucci\JWT\Validation\Constraint;
 use Lcobucci\JWT\Validator;
+use Symfony\Component\Clock\Clock;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function dirname;
@@ -161,13 +160,10 @@ return static function (ContainerConfigurator $container) {
         ->factory(service(DateTimeZoneFactory::class));
 
     $services
-        ->set(SystemClock::class)
+        ->set(Clock::class)
         ->args([
-            service(DateTimeZone::class),
+            '$timezone' => service(DateTimeZone::class),
         ]);
-
-    $services
-        ->alias(Clock::class, SystemClock::class);
 
     $services
         ->set(Signer::class)

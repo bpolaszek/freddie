@@ -10,7 +10,7 @@ use function BenTools\QueryString\query_string;
 use function is_string;
 use function strlen;
 
-final class QueryTokenExtractor implements PSR7TokenExtractorInterface
+final readonly class QueryTokenExtractor implements PSR7TokenExtractorInterface
 {
     public function __construct(
         private string $name = 'authorization',

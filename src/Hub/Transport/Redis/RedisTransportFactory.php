@@ -11,7 +11,7 @@ use Nyholm\Dsn\DsnParser;
 
 use function max;
 
-final class RedisTransportFactory implements TransportFactoryInterface
+final readonly class RedisTransportFactory implements TransportFactoryInterface
 {
     public function __construct(
         private Factory $factory = new Factory(),

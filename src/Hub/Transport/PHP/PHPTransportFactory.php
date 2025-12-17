@@ -10,7 +10,7 @@ use Evenement\EventEmitter;
 use Evenement\EventEmitterInterface;
 use Nyholm\Dsn\DsnParser;
 
-final class PHPTransportFactory implements TransportFactoryInterface
+final readonly class PHPTransportFactory implements TransportFactoryInterface
 {
     public function __construct(
         private EventEmitterInterface $eventEmitter = new EventEmitter(),

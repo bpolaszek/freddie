@@ -10,7 +10,7 @@ use React\Promise\PromiseInterface;
 
 interface TransportInterface
 {
-    public const EARLIEST = 'earliest';
+    public const string EARLIEST = 'earliest';
 
     /**
      * @return PromiseInterface<Update>

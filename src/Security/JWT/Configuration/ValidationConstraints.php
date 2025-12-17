@@ -10,12 +10,12 @@ use Traversable;
 
 use function iterator_to_array;
 
-final class ValidationConstraints
+final readonly class ValidationConstraints
 {
     /**
      * @var Constraint[]
      */
-    public readonly array $constraints;
+    public array $constraints;
 
     /**
      * @param iterable<Constraint> $validationConstraints

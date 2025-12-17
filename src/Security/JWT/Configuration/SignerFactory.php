@@ -10,7 +10,7 @@ use Lcobucci\JWT\Signer;
 /**
  * @codeCoverageIgnore
  */
-final class SignerFactory
+final readonly class SignerFactory
 {
     public function __construct(
         private Configuration $configuration,

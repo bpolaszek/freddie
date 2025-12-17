@@ -26,8 +26,14 @@
             "config/routes/annotations.yaml"
         ]
     },
-    "doctrine/instantiator": {
-        "version": "1.4.0"
+    "doctrine/deprecations": {
+        "version": "1.1",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "1.0",
+            "ref": "87424683adc81d7dc305eefec1fced883084aab9"
+        }
     },
     "doctrine/lexer": {
         "version": "1.2.1"
@@ -43,9 +49,6 @@
     },
     "filp/whoops": {
         "version": "2.14.4"
-    },
-    "lcobucci/clock": {
-        "version": "2.1.0"
     },
     "lcobucci/jwt": {
         "version": "4.1.5"
@@ -175,12 +178,6 @@
     "sebastian/cli-parser": {
         "version": "1.0.1"
     },
-    "sebastian/code-unit": {
-        "version": "1.0.8"
-    },
-    "sebastian/code-unit-reverse-lookup": {
-        "version": "2.0.3"
-    },
     "sebastian/comparator": {
         "version": "4.0.6"
     },
@@ -210,9 +207,6 @@
     },
     "sebastian/recursion-context": {
         "version": "4.0.4"
-    },
-    "sebastian/resource-operations": {
-        "version": "3.0.3"
     },
     "sebastian/type": {
         "version": "2.3.4"

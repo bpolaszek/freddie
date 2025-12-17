@@ -11,7 +11,7 @@ use function is_array;
 use function str_contains;
 use function urldecode;
 
-final class FlatQueryParser implements QueryStringParserInterface
+final readonly class FlatQueryParser implements QueryStringParserInterface
 {
     /**
      * @return array<string, mixed>

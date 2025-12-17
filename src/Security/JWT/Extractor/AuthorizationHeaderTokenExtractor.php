@@ -10,7 +10,7 @@ use function strlen;
 use function str_starts_with;
 use function substr;
 
-final class AuthorizationHeaderTokenExtractor implements PSR7TokenExtractorInterface
+final readonly class AuthorizationHeaderTokenExtractor implements PSR7TokenExtractorInterface
 {
     public function __construct(
         private string $name = 'Authorization',
