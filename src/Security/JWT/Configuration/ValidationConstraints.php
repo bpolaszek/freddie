@@ -4,35 +4,55 @@ declare(strict_types=1);
 
 namespace Freddie\Security\JWT\Configuration;
 
+use IteratorAggregate;
 use Lcobucci\JWT\Token;
 use Lcobucci\JWT\Validation\Constraint;
 use Traversable;
 
-use function iterator_to_array;
-
-final class ValidationConstraints
+/**
+ * @implements IteratorAggregate<Constraint>
+ */
+final class ValidationConstraints implements IteratorAggregate
 {
     /**
-     * @var Constraint[]
+     * @var iterable<Constraint>
+     * @codingStandardsIgnoreStart
      */
-    public readonly array $constraints;
+    private iterable $validationConstraints {
+        get {
+            if (!$this->resolved) {
+                $this->validationConstraints = [
+                    new class implements Constraint {
+                        public function assert(Token $token): void
+                        {
+                        }
+                    },
+                    ...$this->validationConstraints,
+                ];
+                $this->resolved = true;
+            }
+
+            return $this->validationConstraints;
+        }
+    }
+    // @codingStandardsIgnoreEnd
+
+    private bool $resolved = false;
 
     /**
      * @param iterable<Constraint> $validationConstraints
      */
     public function __construct(
-        iterable $validationConstraints,
+        iterable $validationConstraints = [
+            new Constraint\HasClaim('mercure')
+        ],
     ) {
-        $constraints = $validationConstraints instanceof Traversable ?
-            iterator_to_array($validationConstraints)
-            : (array) $validationConstraints;
-        $this->constraints = [
-            new class implements Constraint {
-                public function assert(Token $token): void
-                {
-                }
-            },
-            ...$constraints,
-        ];
+        $this->validationConstraints = $validationConstraints;
+    }
+
+
+    public function getIterator(): Traversable
+    {
+        yield from $this->validationConstraints;
     }
 }

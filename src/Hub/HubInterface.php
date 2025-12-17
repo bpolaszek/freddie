@@ -1,30 +1,39 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Freddie\Hub;
 
 use Freddie\Message\Update;
 use Freddie\Subscription\Subscriber;
+use Freddie\Subscription\Subscription;
 use Generator;
-use React\Promise\PromiseInterface;
+use Symfony\Component\Uid\Ulid;
 
 interface HubInterface
 {
-    public function getOption(string $name): mixed;
+    /**
+     * @var array{allow_anonymous: bool, subscriptions: bool}
+     */
+    public array $options {get;} // @codingStandardsIgnoreLine
+
+    public function getLastEventId(): ?Ulid;
 
     /**
-     * @return PromiseInterface<Update>
+     * @return Generator<Update>
      */
-    public function publish(Update $update): PromiseInterface;
+    public function getUpdates(Subscriber $subscriber): Generator;
 
     public function subscribe(Subscriber $subscriber): void;
 
     public function unsubscribe(Subscriber $subscriber): void;
 
+    public function getSubscription(string $subscriptionIri): ?Subscription;
+
     /**
-     * @param string $lastEventID
-     * @return Generator<Update>
+     * @return iterable<Subscription>
      */
-    public function reconciliate(string $lastEventID): Generator;
+    public function getSubscriptions(?string $topic): iterable;
+
+    public function publish(Update $update): void;
+
+    public function isConnectionAborted(): bool;
 }

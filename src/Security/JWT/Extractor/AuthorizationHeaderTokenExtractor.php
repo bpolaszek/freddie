@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Freddie\Security\JWT\Extractor;
 
-use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Component\HttpFoundation\Request;
 
 use function strlen;
 use function str_starts_with;
 use function substr;
 
-final class AuthorizationHeaderTokenExtractor implements PSR7TokenExtractorInterface
+final readonly class AuthorizationHeaderTokenExtractor implements TokenExtractorInterface
 {
     public function __construct(
         private string $name = 'Authorization',
@@ -18,13 +18,13 @@ final class AuthorizationHeaderTokenExtractor implements PSR7TokenExtractorInter
     ) {
     }
 
-    public function extract(ServerRequestInterface $request): ?string
+    public function extract(Request $request): ?string
     {
-        if (!$request->hasHeader($this->name)) {
+        if (!$request->headers->has($this->name)) {
             return null;
         }
 
-        $authorizationHeader = $request->getHeaderLine($this->name);
+        $authorizationHeader = $request->headers->get($this->name);
         if (!str_starts_with($authorizationHeader, $this->prefix)) {
             return null;
         }

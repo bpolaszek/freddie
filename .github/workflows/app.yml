@@ -11,13 +11,11 @@ on:
 jobs:
   code-style:
     name: Code Style & Static Analysis
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         php:
-          - 8.1
-          - 8.2
-          - 8.3
+          - 8.4
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -42,13 +40,11 @@ jobs:
 
   unit-tests:
     name: Unit tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         php:
-          - 8.1
-          - 8.2
-          - 8.3
+          - 8.4
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -64,33 +60,22 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Run tests
-        run: vendor/bin/pest --testsuite='Unit tests' --coverage --coverage-clover=coverage.xml
+        run: vendor/bin/pest --coverage --coverage-clover=coverage.xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  integration-tests:
-    name: Integration tests
-    runs-on: ubuntu-22.04
-    services:
-      redis:
-        image: redis:6.0
-        ports:
-          - 6379:6379
+  bundle-tests:
+    name: Bundle tests
+    working-directory: test-app
+    runs-on: ubuntu-latest
     strategy:
       max-parallel: 10
       matrix:
-        transport:
-          - "php://localhost?size=10000"
-          - "redis://localhost?size=10000&trimInterval=0.5&pingInterval=0"
-          - "redis://localhost?size=10000&trimInterval=0.5&pingInterval=0.1"
-          - "redis://localhost?size=10000&trimInterval=0.5&pingInterval=0.1&readTimeout=2"
         php:
-          - 8.1
-          - 8.2
-          - 8.3
+          - 8.4
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -106,7 +91,5 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Run tests
-        env:
-          TRANSPORT_DSN: ${{ matrix.transport }}
-        run: vendor/bin/pest --testsuite='Integration tests'
+        run: vendor/bin/pest
 

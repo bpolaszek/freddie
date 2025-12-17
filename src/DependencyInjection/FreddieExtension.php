@@ -9,6 +9,11 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 
+use function dirname;
+
+/**
+ * @codeCoverageIgnore
+ */
 final class FreddieExtension extends Extension
 {
     /**
@@ -17,6 +22,6 @@ final class FreddieExtension extends Extension
     public function load(array $configs, ContainerBuilder $container): void
     {
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__));
-        $loader->load('services.php');
+        $loader->load(dirname(__DIR__) . '/Resources/config/services.php');
     }
 }

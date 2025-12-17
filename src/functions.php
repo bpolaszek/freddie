@@ -4,22 +4,25 @@ declare(strict_types=1);
 
 namespace Freddie;
 
-use Freddie\Helper\FlatQueryParser;
 use Freddie\Helper\TopicHelper;
-use Psr\Http\Message\ServerRequestInterface;
-use React\Promise\PromiseInterface;
+use InvalidArgumentException;
+use Rize\UriTemplate\UriTemplate;
+use Symfony\Component\Uid\Ulid;
 
-use function BenTools\QueryString\query_string;
 use function in_array;
 use function is_string;
-use function React\Promise\Timer\timeout;
 use function settype;
+use function str_starts_with;
 use function strtolower;
+use function substr;
 use function trim;
 
 function topic(string $topic): TopicHelper
 {
-    return TopicHelper::instance()->with($topic);
+    static $helper;
+    $helper ??= new TopicHelper(new UriTemplate());
+
+    return $helper->with($topic);
 }
 
 function is_truthy(mixed $value): bool
@@ -44,35 +47,16 @@ function nullify(mixed $value, ?string $cast = null): mixed
     return $value;
 }
 
-function extract_last_event_id(ServerRequestInterface $request): ?string
+function urn(Ulid $ulid): string
 {
-    $qs = query_string($request->getUri(), new FlatQueryParser());
-    $lastEventId = nullify($request->getHeaderLine('Last-Event-ID')) ?? $qs->getParam('lastEventID');
-    if (null === $lastEventId) {
-        $lastEventId = $qs->getParam('Last-Event-ID') ??
-            $qs->getParam('Last-Event-Id') ??
-            $qs->getParam('last-event-id') ??
-            $qs->getParam('LAST-EVENT-ID');
-
-        if ($lastEventId !== null) {
-            trigger_deprecation(
-                'freddie/mercure-x',
-                '1.0',
-                'Using "Last-Event-ID" query parameter is deprecated, use "lastEventID" instead.',
-            );
-        }
-    }
-
-    return $lastEventId;
+    return 'urn:uuid:' . $ulid->toRfc4122();
 }
 
-/**
- * @internal
- * @template T
- * @param PromiseInterface<T> $promise
- * @return PromiseInterface<T>
- */
-function maybeTimeout(PromiseInterface $promise, float $time = 0.0): PromiseInterface
+function fromUrn(string $urn): Ulid
 {
-    return 0.0 === $time ? $promise : timeout($promise, $time);
+    if (!str_starts_with($urn, 'urn:uuid:')) {
+        throw new InvalidArgumentException('Invalid URN format for Ulid');
+    }
+
+    return Ulid::fromRfc4122(substr($urn, 9));
 }

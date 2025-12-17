@@ -1,0 +1,3 @@
+freddie:
+  resource: '@FreddieBundle/Resources/config/routes.php'
+  type: php

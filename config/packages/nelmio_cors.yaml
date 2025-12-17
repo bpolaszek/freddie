@@ -1,0 +1,14 @@
+parameters:
+  'env(CORS_ORIGIN_REGEX)': 'false'
+  'env(CORS_ALLOW_CREDENTIALS)': 'true'
+nelmio_cors:
+    defaults:
+        origin_regex: '%env(bool:CORS_ORIGIN_REGEX)%'
+        allow_credentials: '%env(bool:CORS_ALLOW_CREDENTIALS)%'
+        allow_origin: ['%env(CORS_ALLOW_ORIGIN)%']
+        allow_methods: ['GET', 'OPTIONS', 'POST']
+        allow_headers: ['Content-Type', 'Authorization']
+        expose_headers: ['Link']
+        max_age: 3600
+    paths:
+        '^/': null
