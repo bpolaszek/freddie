@@ -22,7 +22,7 @@
         "phpdocumentor/reflection-docblock": "^5.3",
         "react/async": "^4.0.0",
         "react/promise-timer": "^1.10",
-        "rize/uri-template": "^0.3.4",
+        "rize/uri-template": "^0.4.1",
         "symfony/clock": "^6.0|^7.0.0|^8.0.0",
         "symfony/console": "^6.0.0|^7.0.0|^8.0.0",
         "symfony/deprecation-contracts": "^3.1",
