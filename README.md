@@ -1,3 +1,35 @@
+
+<div align="right">
+  <details>
+    <summary >🌐 Language</summary>
+    <div>
+      <div align="center">
+        <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=en">English</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=zh-CN">简体中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=zh-TW">繁體中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=ja">日本語</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=ko">한국어</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=hi">हिन्दी</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=th">ไทย</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=fr">Français</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=de">Deutsch</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=es">Español</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=it">Italiano</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=ru">Русский</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=pt">Português</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=nl">Nederlands</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=pl">Polski</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=ar">العربية</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=fa">فارسی</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=tr">Türkçe</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=vi">Tiếng Việt</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=id">Bahasa Indonesia</a>
+        | <a href="https://openaitx.github.io/view.html?user=bpolaszek&project=freddie&lang=as">অসমীয়া</
+      </div>
+    </div>
+  </details>
+</div>
+
 [![Application](https://github.com/bpolaszek/mercure-x/actions/workflows/app.yml/badge.svg)](https://github.com/bpolaszek/mercure-x/actions/workflows/app.yml)
 [![Coverage](https://codecov.io/gh/bpolaszek/freddie/branch/main/graph/badge.svg?token=uB4gRHyS6r)](https://codecov.io/gh/bpolaszek/freddie)
 
