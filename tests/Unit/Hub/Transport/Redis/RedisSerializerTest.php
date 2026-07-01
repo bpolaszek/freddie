@@ -75,7 +75,10 @@ it('stays wire-compatible with the Symfony ObjectNormalizer format', function ()
 // Matches the previous ObjectNormalizer contract: optional message fields fall
 // back to their defaults (a missing id is regenerated) WITHOUT emitting a warning.
 it('tolerates missing optional message fields without emitting a warning', function () {
-    set_error_handler(static fn (int $errno, string $errstr) => throw new ErrorException($errstr), E_WARNING | E_NOTICE);
+    set_error_handler(
+        static fn (int $errno, string $errstr) => throw new ErrorException($errstr),
+        E_WARNING | E_NOTICE,
+    );
 
     try {
         $update = (new RedisSerializer())->deserialize('{"topics":["/foo"],"message":{"data":"hi"}}');

@@ -46,8 +46,10 @@ final readonly class RedisSerializer
 
         // Required keys throw (as the previous ObjectNormalizer did); optional
         // message fields fall back to their defaults (a missing id is regenerated).
-        $topics = $data['topics'] ?? throw new UnexpectedValueException('Malformed Mercure update: missing "topics".');
-        $message = $data['message'] ?? throw new UnexpectedValueException('Malformed Mercure update: missing "message".');
+        $topics = $data['topics']
+            ?? throw new UnexpectedValueException('Malformed Mercure update: missing "topics".');
+        $message = $data['message']
+            ?? throw new UnexpectedValueException('Malformed Mercure update: missing "message".');
 
         return new Update(
             $topics,
