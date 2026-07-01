@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Freddie\Tests\Unit\Hub\Transport\Redis;
 
+use ErrorException;
 use Freddie\Hub\Transport\Redis\RedisSerializer;
 use Freddie\Message\Message;
 use Freddie\Message\Update;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
+use UnexpectedValueException;
 
 it('round-trips an update with all message fields', function () {
     $serializer = new RedisSerializer();
@@ -69,3 +71,30 @@ it('stays wire-compatible with the Symfony ObjectNormalizer format', function ()
     expect($fromOld->message->event)->toBe('e');
     expect($fromOld->message->retry)->toBe(1);
 });
+
+// Matches the previous ObjectNormalizer contract: optional message fields fall
+// back to their defaults (a missing id is regenerated) WITHOUT emitting a warning.
+it('tolerates missing optional message fields without emitting a warning', function () {
+    set_error_handler(static fn (int $errno, string $errstr) => throw new ErrorException($errstr), E_WARNING | E_NOTICE);
+
+    try {
+        $update = (new RedisSerializer())->deserialize('{"topics":["/foo"],"message":{"data":"hi"}}');
+    } finally {
+        restore_error_handler();
+    }
+
+    expect(strlen($update->message->id))->toBe(26); // a fresh Ulid was generated
+    expect($update->message->data)->toBe('hi');
+    expect($update->message->private)->toBeFalse();
+    expect($update->message->event)->toBeNull();
+    expect($update->message->retry)->toBeNull();
+});
+
+// Matches the previous ObjectNormalizer contract: required keys throw when absent.
+it('throws when the payload is missing required topics', function () {
+    (new RedisSerializer())->deserialize('{"message":{"id":"01CX","data":"hi"}}');
+})->throws(UnexpectedValueException::class);
+
+it('throws when the payload is missing the message', function () {
+    (new RedisSerializer())->deserialize('{"topics":["/foo"]}');
+})->throws(UnexpectedValueException::class);

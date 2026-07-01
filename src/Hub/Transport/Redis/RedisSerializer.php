@@ -6,6 +6,7 @@ namespace Freddie\Hub\Transport\Redis;
 
 use Freddie\Message\Message;
 use Freddie\Message\Update;
+use UnexpectedValueException;
 
 use function json_decode;
 use function json_encode;
@@ -40,18 +41,22 @@ final readonly class RedisSerializer
 
     public function deserialize(string $payload): Update
     {
-        /** @var array{topics: string[], message: array{id: string, data: string|null, private: bool, event: string|null, retry: int|null}} $data */
+        /** @var array{topics?: string[], message?: array{id?: string|null, data?: string|null, private?: bool, event?: string|null, retry?: int|null}} $data */
         $data = json_decode($payload, true, flags: JSON_THROW_ON_ERROR);
-        $message = $data['message'];
+
+        // Required keys throw (as the previous ObjectNormalizer did); optional
+        // message fields fall back to their defaults (a missing id is regenerated).
+        $topics = $data['topics'] ?? throw new UnexpectedValueException('Malformed Mercure update: missing "topics".');
+        $message = $data['message'] ?? throw new UnexpectedValueException('Malformed Mercure update: missing "message".');
 
         return new Update(
-            $data['topics'],
+            $topics,
             new Message(
-                id: $message['id'],
-                data: $message['data'],
-                private: $message['private'],
-                event: $message['event'],
-                retry: $message['retry'],
+                id: $message['id'] ?? null,
+                data: $message['data'] ?? null,
+                private: $message['private'] ?? false,
+                event: $message['event'] ?? null,
+                retry: $message['retry'] ?? null,
             ),
         );
     }
