@@ -4,26 +4,55 @@ declare(strict_types=1);
 
 namespace Freddie\Hub\Transport\Redis;
 
+use Freddie\Message\Message;
 use Freddie\Message\Update;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Serializer;
-use Symfony\Component\Serializer\SerializerInterface;
 
+use function json_decode;
+use function json_encode;
+
+use const JSON_THROW_ON_ERROR;
+
+/**
+ * Hand-rolled (de)serializer for the Redis transport.
+ *
+ * The wire shape is intentionally identical to the previous Symfony
+ * ObjectNormalizer output so mixed hub versions stay interoperable during a
+ * rolling deploy; only the reflection-heavy normalizer is dropped, since this
+ * runs on every message on every worker.
+ */
 final readonly class RedisSerializer
 {
-    public function __construct(
-        private SerializerInterface $serializer = new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
-    ) {
-    }
-
     public function serialize(Update $update): string
     {
-        return $this->serializer->serialize($update, 'json');
+        $message = $update->message;
+
+        return json_encode([
+            'topics' => $update->topics,
+            'message' => [
+                'id' => $message->id,
+                'data' => $message->data,
+                'private' => $message->private,
+                'event' => $message->event,
+                'retry' => $message->retry,
+            ],
+        ], JSON_THROW_ON_ERROR);
     }
 
     public function deserialize(string $payload): Update
     {
-        return $this->serializer->deserialize($payload, Update::class, 'json');
+        /** @var array{topics: string[], message: array{id: string, data: string|null, private: bool, event: string|null, retry: int|null}} $data */
+        $data = json_decode($payload, true, flags: JSON_THROW_ON_ERROR);
+        $message = $data['message'];
+
+        return new Update(
+            $data['topics'],
+            new Message(
+                id: $message['id'],
+                data: $message['data'],
+                private: $message['private'],
+                event: $message['event'],
+                retry: $message['retry'],
+            ),
+        );
     }
 }
