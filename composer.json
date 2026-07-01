@@ -80,7 +80,7 @@
         "post-update-cmd": [
             "bin/freddie cache:clear"
         ],
-        "phpstan:analyze": "vendor/bin/phpstan analyse --memory-limit=1G",
+        "phpstan:analyze": "vendor/bin/phpstan analyse",
         "linter:check": "vendor/bin/phpcs",
         "linter:fix": "vendor/bin/phpcbf",
         "tests:unit:run": "vendor/bin/pest --testsuite='Unit tests'",
