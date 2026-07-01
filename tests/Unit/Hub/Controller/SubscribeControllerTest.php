@@ -194,3 +194,48 @@ it('unsubscribes from transport whenever connection closes', function () {
     expect($stream->storage)->toHaveCount(1);
     expect($stream->storage[0])->toBe((string) $hello);
 });
+
+it('writes periodic heartbeats and stops them when the connection closes', function () {
+    $controller = new SubscribeController();
+    $controller->setHub(new Hub(options: ['heartbeat_interval' => 0.01]));
+    $stream = new ThroughStreamStub();
+
+    // Given
+    $request = new ServerRequest('GET', '/.well-known/mercure?topic=/foo');
+
+    // When: a few heartbeats have time to fire
+    $controller($request, $stream);
+    Loop::addTimer(0.025, fn () => Loop::stop());
+    Loop::run();
+
+    $beats = fn () => count(array_filter($stream->storage, fn ($chunk) => ":\n" === $chunk));
+
+    // Then: heartbeats were written
+    $before = $beats();
+    expect($before)->toBeGreaterThanOrEqual(1);
+
+    // When: the connection closes
+    $stream->close();
+    Loop::addTimer(0.025, fn () => Loop::stop());
+    Loop::run();
+
+    // Then: no further heartbeats are written (timer cancelled on close)
+    expect($beats())->toBe($before);
+});
+
+it('does not write heartbeats when the interval is zero', function () {
+    $controller = new SubscribeController();
+    $controller->setHub(new Hub(options: ['heartbeat_interval' => 0.0]));
+    $stream = new ThroughStreamStub();
+
+    // Given
+    $request = new ServerRequest('GET', '/.well-known/mercure?topic=/foo');
+
+    // When
+    $controller($request, $stream);
+    Loop::addTimer(0.025, fn () => Loop::stop());
+    Loop::run();
+
+    // Then
+    expect($stream->storage)->toBe([]);
+});
