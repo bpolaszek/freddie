@@ -8,10 +8,9 @@ use ErrorException;
 use Freddie\Hub\Transport\Redis\RedisSerializer;
 use Freddie\Message\Message;
 use Freddie\Message\Update;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Serializer;
 use UnexpectedValueException;
+
+use function Freddie\Tests\legacy_redis_serializer;
 
 it('round-trips an update with all message fields', function () {
     $serializer = new RedisSerializer();
@@ -49,7 +48,7 @@ it('round-trips an update with null message fields and preserves the id', functi
 // Symfony ObjectNormalizer wire format.
 it('stays wire-compatible with the Symfony ObjectNormalizer format', function () {
     $serializer = new RedisSerializer();
-    $objectNormalizer = new Serializer([new ObjectNormalizer()], [new JsonEncoder()]);
+    $objectNormalizer = legacy_redis_serializer();
     $update = new Update(['/foo'], new Message(id: '01CX', data: 'hi', private: true, event: 'e', retry: 1));
 
     // new serialize -> old deserialize
