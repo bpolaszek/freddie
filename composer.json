@@ -14,7 +14,7 @@
         "ext-ctype": "*",
         "ext-iconv": "*",
         "bentools/querystring": "^1.1",
-        "clue/framework-x": "dev-main#cfe017426d8acc7a92b5893a501728e034a873cc",
+        "clue/framework-x": "^0.17",
         "clue/redis-react": "^2.5",
         "doctrine/annotations": "^1.0",
         "lcobucci/jwt": "^5.5",
