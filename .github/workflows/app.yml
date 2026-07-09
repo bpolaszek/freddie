@@ -60,7 +60,7 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Run tests
-        run: vendor/bin/pest --testsuite='Unit tests' --coverage --coverage-clover=coverage.xml
+        run: vendor/bin/pest --testsuite='Unit tests' --compact --coverage --coverage-clover=coverage.xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
@@ -104,5 +104,5 @@ jobs:
       - name: Run tests
         env:
           TRANSPORT_DSN: ${{ matrix.transport }}
-        run: vendor/bin/pest --testsuite='Integration tests'
+        run: vendor/bin/pest --testsuite='Integration tests' --compact
 
