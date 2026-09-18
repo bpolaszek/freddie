@@ -8,7 +8,6 @@ use Psr\Http\Message\ServerRequestInterface;
 
 use function array_map;
 use function implode;
-use function is_string;
 use function strlen;
 
 final readonly class CookieTokenExtractor implements PSR7TokenExtractorInterface
@@ -37,7 +36,7 @@ final readonly class CookieTokenExtractor implements PSR7TokenExtractorInterface
             ),
         );
 
-        if (!is_string($token) || strlen($token) < 41) {
+        if (strlen($token) < 41) {
             return null;
         }
 

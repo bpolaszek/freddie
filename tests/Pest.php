@@ -11,6 +11,9 @@ use Lcobucci\JWT\Configuration;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ReflectionClass;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
 
 function handle(App $app, ServerRequestInterface $request): ResponseInterface
 {
@@ -44,6 +47,17 @@ function jwt_config(): Configuration
         \file_get_contents(\strtr($_SERVER['JWT_PUBLIC_KEY'], ['%kernel.project_dir%' => \dirname(__DIR__)])),
         $_SERVER['JWT_PASSPHRASE'],
     );
+}
+
+/**
+ * The Symfony-based serializer previously used for the Redis transport,
+ * kept as a dev dependency to assert wire-format compatibility.
+ */
+function legacy_redis_serializer(): Serializer
+{
+    static $serializer;
+
+    return $serializer ??= new Serializer([new ObjectNormalizer()], [new JsonEncoder()]);
 }
 
 function create_jwt(array $claims): string

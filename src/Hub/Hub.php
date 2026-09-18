@@ -24,6 +24,7 @@ final class Hub implements HubInterface
 {
     public const DEFAULT_OPTIONS = [
         'allow_anonymous' => true,
+        'heartbeat_interval' => 40.0,
     ];
 
     /**
@@ -47,6 +48,7 @@ final class Hub implements HubInterface
         $resolver = new OptionsResolver();
         $resolver->setDefaults(self::DEFAULT_OPTIONS);
         $resolver->setAllowedTypes('allow_anonymous', 'bool');
+        $resolver->setAllowedTypes('heartbeat_interval', ['int', 'float']);
         $this->options = $resolver->resolve($options);
         foreach ($controllers as $controller) {
             $controller->setHub($this);

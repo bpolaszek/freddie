@@ -44,11 +44,13 @@ return static function (ContainerConfigurator $container) {
     $params = $container->parameters();
     $params->set('env(TRANSPORT_DSN)', 'php://default');
     $params->set('env(ALLOW_ANONYMOUS)', Hub::DEFAULT_OPTIONS['allow_anonymous']);
+    $params->set('env(HEARTBEAT_INTERVAL)', Hub::DEFAULT_OPTIONS['heartbeat_interval']);
     $params->set('env(JWT_SECRET_KEY)', '!ChangeMe!');
     $params->set('env(JWT_PUBLIC_KEY)', null);
     $params->set('env(JWT_ALGORITHM)', 'HS256');
     $params->set('transport_dsn', '%env(resolve:TRANSPORT_DSN)%');
     $params->set('allow_anonymous', '%env(bool:ALLOW_ANONYMOUS)%');
+    $params->set('heartbeat_interval', '%env(float:HEARTBEAT_INTERVAL)%');
 
     $services = $container->services();
     $services
@@ -100,7 +102,10 @@ return static function (ContainerConfigurator $container) {
 
     $services
         ->set(Hub::class)
-        ->arg('$options', ['allow_anonymous' => param('allow_anonymous')]);
+        ->arg('$options', [
+            'allow_anonymous' => param('allow_anonymous'),
+            'heartbeat_interval' => param('heartbeat_interval'),
+        ]);
 
     $services->alias(HubInterface::class, Hub::class);
 

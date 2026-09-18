@@ -12,6 +12,7 @@ use Freddie\Subscription\Subscriber;
 use Lcobucci\JWT\UnencryptedToken;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use React\EventLoop\Loop;
 use React\Http\Message\Response;
 use React\Stream\ReadableStreamInterface;
 use React\Stream\ThroughStream;
@@ -25,6 +26,12 @@ use function React\Async\async;
 
 final class SubscribeController implements HubControllerInterface
 {
+    /**
+     * SSE comment line: keeps proxies from closing idle connections and forces
+     * the TCP stack to detect half-open peers so their subscribers get reaped.
+     */
+    private const HEARTBEAT = ":\n";
+
     private HubInterface $hub;
 
     public function setHub(HubInterface $hub): self
@@ -81,6 +88,15 @@ final class SubscribeController implements HubControllerInterface
                 $subscriber->setCallback($callback);
                 $this->hub->subscribe($subscriber);
                 $stream->on('close', fn() => $this->hub->unsubscribe($subscriber));
+
+                $heartbeatInterval = (float) $this->hub->getOption('heartbeat_interval');
+                if ($heartbeatInterval > 0) {
+                    $timer = Loop::addPeriodicTimer(
+                        $heartbeatInterval,
+                        fn() => $stream->write(self::HEARTBEAT),
+                    );
+                    $stream->on('close', fn() => Loop::cancelTimer($timer));
+                }
             }
         )();
 

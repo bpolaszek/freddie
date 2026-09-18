@@ -194,3 +194,75 @@ it('unsubscribes from transport whenever connection closes', function () {
     expect($stream->storage)->toHaveCount(1);
     expect($stream->storage[0])->toBe((string) $hello);
 });
+
+it('writes periodic heartbeats and cancels the timer when the stream is closed', function () {
+    $controller = new SubscribeController();
+    $controller->setHub(new Hub(options: ['heartbeat_interval' => 0.01]));
+    $stream = new ThroughStreamStub();
+
+    // Given
+    $request = new ServerRequest('GET', '/.well-known/mercure?topic=/foo');
+
+    // When: a few heartbeats have time to fire
+    $controller($request, $stream);
+    Loop::addTimer(0.025, fn () => Loop::stop());
+    Loop::run();
+
+    $beats = fn () => count(array_filter($stream->storage, fn ($chunk) => ":\n" === $chunk));
+
+    // Then: heartbeats were written on the interval
+    $before = $beats();
+    expect($before)->toBeGreaterThanOrEqual(1);
+
+    // When: the stream is closed (e.g. a graceful client disconnect)
+    $stream->close();
+    Loop::addTimer(0.025, fn () => Loop::stop());
+    Loop::run();
+
+    // Then: the timer was cancelled, so no further heartbeats are written
+    expect($beats())->toBe($before);
+});
+
+// The actual reaping of a "gone" client is delegated to React/TCP: a heartbeat
+// write to a half-open socket eventually fails, React emits 'close', and the
+// existing 'close' handler unsubscribes. DeadStreamStub simulates that failed
+// write so we can assert the Freddie-side chain (write -> close -> unsubscribe).
+it('reaps a gone client when a heartbeat write closes the dead stream', function () {
+    $transport = new PHPTransport(size: 1000);
+    $controller = new SubscribeController();
+    $controller->setHub(new Hub(transport: $transport, options: ['heartbeat_interval' => 0.01]));
+    $stream = new DeadStreamStub();
+
+    // Given: a subscriber whose client has silently gone away
+    $request = new ServerRequest('GET', '/.well-known/mercure?topic=/foo');
+    $controller($request, $stream);
+
+    // When: the heartbeat fires and its write hits the dead peer
+    Loop::addTimer(0.03, fn () => Loop::stop());
+    Loop::run();
+
+    // Then: a single heartbeat was attempted, which closed the stream and
+    // cancelled the timer (no repeated writes)
+    expect($stream->writes)->toBe([":\n"]);
+
+    // And: the subscriber was unsubscribed, so a later update is not delivered
+    $transport->publish(new Update(['/foo'], new Message(data: 'after')));
+    expect($stream->writes)->toBe([":\n"]);
+});
+
+it('does not write heartbeats when the interval is zero', function () {
+    $controller = new SubscribeController();
+    $controller->setHub(new Hub(options: ['heartbeat_interval' => 0.0]));
+    $stream = new ThroughStreamStub();
+
+    // Given
+    $request = new ServerRequest('GET', '/.well-known/mercure?topic=/foo');
+
+    // When
+    $controller($request, $stream);
+    Loop::addTimer(0.025, fn () => Loop::stop());
+    Loop::run();
+
+    // Then
+    expect($stream->storage)->toBe([]);
+});
