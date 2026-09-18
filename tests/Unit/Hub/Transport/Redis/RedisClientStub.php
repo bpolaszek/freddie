@@ -9,6 +9,7 @@ use Clue\React\Redis\Client;
 use Evenement\EventEmitter;
 use Evenement\EventEmitterInterface;
 use Pest\Exceptions\ShouldNotHappen;
+use React\Promise\Promise;
 use React\Promise\PromiseInterface;
 
 use function abs;
@@ -21,10 +22,21 @@ final class RedisClientStub implements Client
 {
     public array $subscribedChannels = [];
 
+    public int $pings = 0;
+
+    public bool $answersPings = true;
+
     public function __construct(
         public readonly ArrayObject $storage = new ArrayObject(),
         private EventEmitterInterface $eventEmitter = new EventEmitter(),
     ) {
+    }
+
+    public function ping(): PromiseInterface
+    {
+        ++$this->pings;
+
+        return $this->answersPings ? resolve(true) : new Promise(static fn () => null);
     }
 
     public function subscribe(string $channel): void

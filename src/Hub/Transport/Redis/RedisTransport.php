@@ -55,17 +55,18 @@ final class RedisTransport implements TransportInterface
         $this->subscriber->on('unsubscribe', fn () => Hub::die(new RuntimeException('Redis connection lost')));
     }
 
-    /**
-     * @codeCoverageIgnore
-     */
     private function ping(): void
     {
-        /** @var PromiseInterface $ping */
-        $ping = $this->redis->ping(); // @phpstan-ignore-line
-        $ping = maybeTimeout($ping, $this->options['readTimeout']);
-        $ping->then(
-            onRejected: Hub::die(...),
-        );
+        // The subscriber connection only ever reads, so a half-open socket goes
+        // unnoticed there until something is written to it.
+        foreach ([$this->redis, $this->subscriber] as $client) {
+            /** @var PromiseInterface $ping */
+            $ping = $client->ping(); // @phpstan-ignore-line
+            $ping = maybeTimeout($ping, $this->options['readTimeout']);
+            $ping->then(
+                onRejected: Hub::die(...),
+            );
+        }
     }
 
     public function subscribe(callable $callback): void
