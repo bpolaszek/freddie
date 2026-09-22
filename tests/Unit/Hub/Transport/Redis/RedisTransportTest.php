@@ -111,3 +111,33 @@ it('periodically trims the database', function () {
 
     expect($client->storage->getArrayCopy()['mercureUpdates'])->toHaveCount(3);
 });
+
+it('pings the subscription connection as well as the command connection', function () {
+    $subscriber = new RedisClientStub();
+    $redis = new RedisClientStub();
+
+    new RedisTransport($subscriber, $redis, options: ['pingInterval' => 0.01]);
+
+    expect($redis->pings)->toBeGreaterThan(0)
+        ->and($subscriber->pings)->toBeGreaterThan(0);
+});
+
+it('kills the hub when the subscription connection stops answering', function () {
+    $subscriber = new RedisClientStub();
+    $subscriber->answersPings = false;
+    $redis = new RedisClientStub();
+
+    new RedisTransport($subscriber, $redis, options: [
+        'pingInterval' => 0.01,
+        'readTimeout' => 0.01,
+    ]);
+
+    $stoppedByGuard = false;
+    Loop::addTimer(1.0, function () use (&$stoppedByGuard) {
+        $stoppedByGuard = true;
+        Loop::stop();
+    });
+    Loop::run();
+
+    expect($stoppedByGuard)->toBeFalse();
+});
