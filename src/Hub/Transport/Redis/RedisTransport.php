@@ -27,6 +27,7 @@ final class RedisTransport implements TransportInterface
      */
     private array $options;
     private bool $initialized = false;
+    public readonly Client $reader;
 
     /**
      * @param array<string, mixed> $options
@@ -37,7 +38,10 @@ final class RedisTransport implements TransportInterface
         private readonly RedisSerializer $serializer = new RedisSerializer(),
         private readonly EventEmitterInterface $eventEmitter = new EventEmitter(),
         array $options = [],
+        ?Client $reader = null,
     ) {
+        // Reconciliation replies can take seconds to stream, keep them off the pinged connection
+        $this->reader = $reader ?? $this->redis;
         $resolver = new OptionsResolver();
         $resolver->setDefaults([
             'size' => 0,
@@ -102,7 +106,7 @@ final class RedisTransport implements TransportInterface
 
         $yield = self::EARLIEST === $lastEventID;
         // @phpstan-ignore-next-line
-        $payloads = await($this->redis->lrange($this->options['key'], -$this->options['size'], -1));
+        $payloads = await($this->reader->lrange($this->options['key'], -$this->options['size'], -1));
         foreach ($payloads as $payload) {
             $update = $this->serializer->deserialize($payload);
             if ($yield) {
