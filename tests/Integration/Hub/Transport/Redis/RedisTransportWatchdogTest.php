@@ -27,9 +27,6 @@ use function usleep;
  */
 
 beforeEach(function () {
-    if (null === RedisHarness::dsn()) {
-        $this->markTestSkipped('FREDDIE_TEST_REDIS_DSN is not set.');
-    }
     $this->previousLoop = Loop::get();
     Loop::set($this->loop = new StreamSelectLoop());
     $this->rejections = $rejections = new ArrayObject();
@@ -39,6 +36,9 @@ beforeEach(function () {
         set_rejection_handler($handler);
     };
     $this->previousHandler = set_rejection_handler($handler);
+    if (null === RedisHarness::dsn()) {
+        $this->markTestSkipped('FREDDIE_TEST_REDIS_DSN is not set.');
+    }
 });
 
 afterEach(function () {
