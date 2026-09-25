@@ -30,6 +30,7 @@ final readonly class RedisTransportFactory implements TransportFactoryInterface
         $parsed = DsnParser::parse($dsn);
         $redis = $this->factory->createLazyClient($dsn);
         $subscriber = $this->factory->createLazyClient($dsn); // Create a 2nd, blocking connection to receive updates
+        $reader = $this->factory->createLazyClient($dsn); // Create a 3rd connection for reconciliation reads
 
         return new RedisTransport(
             $subscriber,
@@ -43,6 +44,7 @@ final readonly class RedisTransportFactory implements TransportFactoryInterface
                 'channel' => (string) $parsed->getParameter('channel', 'mercure'),
                 'key' => (string) $parsed->getParameter('key', 'mercureUpdates'),
             ],
+            reader: $reader,
         );
     }
 }
