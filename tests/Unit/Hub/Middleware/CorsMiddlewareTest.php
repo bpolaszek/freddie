@@ -46,7 +46,7 @@ it('decorates response with CORS mechanism with default corsOrigin setup', funct
         ->and($response->getHeaderLine('Access-Control-Allow-Headers'))->toBe('*')
         ->and($response->getHeaderLine('Access-Control-Allow-Credentials'))->toBe('true')
         ->and($response->getHeaderLine('Access-Control-Expose-Headers'))
-        ->toBe('Mercure-Last-Event-ID, Link, WWW-Authenticate')
+        ->toBe('Mercure-Last-Event-ID, Last-Event-ID, Link, WWW-Authenticate, Accept-Query')
         ->and($response->getStatusCode())->toBe(400);
 });
 

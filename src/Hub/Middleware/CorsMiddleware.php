@@ -25,7 +25,10 @@ final readonly class CorsMiddleware
             ->withAddedHeader('Access-Control-Allow-Headers', '*')
             ->withAddedHeader('Access-Control-Allow-Methods', '*')
             ->withAddedHeader('Access-Control-Allow-Credentials', 'true')
-            ->withAddedHeader('Access-Control-Expose-Headers', 'Mercure-Last-Event-ID, Link, WWW-Authenticate');
+            ->withAddedHeader(
+                'Access-Control-Expose-Headers',
+                'Mercure-Last-Event-ID, Last-Event-ID, Link, WWW-Authenticate, Accept-Query',
+            );
 
         // Preflight requests are not routed: answer them successfully, but keep the status of the others.
         return 'OPTIONS' === $request->getMethod() ? $response->withStatus(Response::STATUS_OK) : $response;
