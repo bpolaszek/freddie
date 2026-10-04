@@ -121,7 +121,7 @@ it('replays the updates following the last event ID', function () {
         ->and($stream->storage)->toBe([(string) $second]);
 });
 
-it('gives the latest receivable event ID when the last event ID is unknown', function (string $query, array $headers) {
+it('gives the earliest cursor when the last event ID is unknown or empty', function (string $query, array $headers) {
     $transport = new PHPTransport(size: 1000);
     $controller = subscribe_controller($transport);
     $stream = new ThroughStreamStub();
@@ -129,30 +129,20 @@ it('gives the latest receivable event ID when the last event ID is unknown', fun
     // Given
     $transport->publish(new Update(['/foo'], new Message(id: 'first')));
     $transport->publish(new Update(['/foo'], new Message(id: 'second')));
-    $transport->publish(new Update(['/foo'], new Message(id: 'private', private: true))); // Not disclosed
-    $transport->publish(new Update(['/bar'], new Message(id: 'other'))); // Not subscribed
     $request = new ServerRequest('GET', '/.well-known/mercure?match=/foo' . $query, $headers);
 
     // When
     $response = $controller($request, $stream);
     run_loop();
 
-    // Then
-    expect($response->getHeaderLine('Mercure-Last-Event-ID'))->toBe('second')
+    // Then: nothing precedes the first event the subscriber will receive
+    expect($response->getHeaderLine('Mercure-Last-Event-ID'))->toBe('earliest')
         ->and($stream->storage)->toBe([]);
 })->with([
     'unknown ID' => ['&last_event_id=unknown', []],
     'empty query parameter' => ['&last_event_id=', []],
     'empty header' => ['', ['Last-Event-ID' => '']],
 ]);
-
-it('gives the earliest cursor when nothing is receivable', function () {
-    $controller = subscribe_controller();
-
-    $response = $controller(new ServerRequest('GET', '/.well-known/mercure?match=/foo&last_event_id=unknown'));
-
-    expect($response->getHeaderLine('Mercure-Last-Event-ID'))->toBe('earliest');
-});
 
 it('does not send the cursor when no last event ID is requested', function () {
     $response = subscribe_controller()(new ServerRequest('GET', '/.well-known/mercure?match=/foo'));

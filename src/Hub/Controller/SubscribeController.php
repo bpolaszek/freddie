@@ -139,35 +139,25 @@ final class SubscribeController implements HubControllerInterface
 
     /**
      * Returns the updates the subscriber missed and the ID of the event preceding the first one sent
-     * (the reconciliation cursor). Only events the subscriber may receive are disclosed.
+     * (the reconciliation cursor): the requested ID, or "earliest" when it is empty, unknown or discarded.
      *
      * @return array{Update[], string}
      */
     private function reconcile(Subscriber $subscriber, ?string $lastEventId): array
     {
-        if (null !== $lastEventId) {
-            $missed = [];
-            $history = $this->hub->reconciliate($lastEventId);
-            foreach ($history as $update) {
-                if ($subscriber->canReceive($update)) {
-                    $missed[] = $update;
-                }
-            }
-
-            if (true === $history->getReturn()) {
-                return [$missed, $lastEventId];
-            }
+        if (null === $lastEventId) {
+            return [[], TransportInterface::EARLIEST];
         }
 
-        // Unknown (or empty) last event ID: nothing is replayed, the cursor is the latest receivable event.
-        $cursor = TransportInterface::EARLIEST;
-        foreach ($this->hub->reconciliate(TransportInterface::EARLIEST) as $update) {
+        $missed = [];
+        $history = $this->hub->reconciliate($lastEventId);
+        foreach ($history as $update) {
             if ($subscriber->canReceive($update)) {
-                $cursor = $update->message->id;
+                $missed[] = $update;
             }
         }
 
-        return [[], $cursor];
+        return true === $history->getReturn() ? [$missed, $lastEventId] : [[], TransportInterface::EARLIEST];
     }
 
     private function dispatchSubscriptionEvents(Subscriber $subscriber, bool $active): void
