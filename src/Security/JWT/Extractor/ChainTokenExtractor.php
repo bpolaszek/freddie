@@ -32,17 +32,18 @@ final class ChainTokenExtractor implements PSR7TokenExtractorInterface
      */
     public static function create(bool $legacy = false, string $cookieName = self::COOKIE_NAME): self
     {
-        $extractors = [
-            new AuthorizationHeaderTokenExtractor(),
-            new CookieTokenExtractor($cookieName),
-        ];
-
-        if ($legacy) {
-            $extractors[] = new CookieTokenExtractor(self::LEGACY_COOKIE_NAME);
-            $extractors[] = new QueryTokenExtractor();
+        if (!$legacy) {
+            return new self([new AuthorizationHeaderTokenExtractor(), new CookieTokenExtractor($cookieName)]);
         }
 
-        return new self($extractors);
+        // Freddie used to read the query parameter before the cookie: a token explicitly passed in the URL
+        // must keep winning over the one an app set in a cookie.
+        return new self([
+            new AuthorizationHeaderTokenExtractor(),
+            new QueryTokenExtractor(),
+            new CookieTokenExtractor($cookieName),
+            new CookieTokenExtractor(self::LEGACY_COOKIE_NAME),
+        ]);
     }
 
     public function extract(ServerRequestInterface $request): ?string

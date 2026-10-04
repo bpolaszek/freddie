@@ -88,6 +88,12 @@ it('extracts tokens the legacy way in compatibility mode', function (
         ]),
         'expected' => VALID_TOKEN,
     ];
+    yield 'query parameter takes precedence over cookies' => [
+        'request' => new ServerRequest('GET', '/.well-known/mercure?authorization=' . VALID_TOKEN, [
+            'Cookie' => 'mercureAuthorization=' . strrev(VALID_TOKEN),
+        ]),
+        'expected' => VALID_TOKEN,
+    ];
     yield 'new cookie' => [
         'request' => new ServerRequest('GET', '/.well-known/mercure', [
             'Cookie' => '__Secure-mercure_access_token=' . VALID_TOKEN,
