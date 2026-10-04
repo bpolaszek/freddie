@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Freddie\Hub\Controller;
 
-use Freddie\Helper\FlatQueryParser;
 use Freddie\Hub\HubControllerInterface;
 use Freddie\Hub\HubInterface;
+use Freddie\Hub\Request\SubscriptionRequest;
+use Freddie\Hub\Transport\TransportInterface;
+use Freddie\Message\Message;
 use Freddie\Message\Update;
+use Freddie\Security\BearerTokenException;
+use Freddie\Security\Grants;
 use Freddie\Subscription\Subscriber;
-use Lcobucci\JWT\UnencryptedToken;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use React\EventLoop\Loop;
@@ -17,12 +20,6 @@ use React\Http\Message\Response;
 use React\Stream\ReadableStreamInterface;
 use React\Stream\ThroughStream;
 use React\Stream\WritableStreamInterface;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-
-use function Freddie\extract_last_event_id;
-use function BenTools\QueryString\query_string;
-use function React\Async\async;
 
 final class SubscribeController implements HubControllerInterface
 {
@@ -31,6 +28,11 @@ final class SubscribeController implements HubControllerInterface
      * the TCP stack to detect half-open peers so their subscribers get reaped.
      */
     private const HEARTBEAT = ":\n";
+
+    /**
+     * The SSE event type of the updates the hub generates itself (subscription events).
+     */
+    public const string RESERVED_EVENT_TYPE = 'mercure';
 
     private HubInterface $hub;
 
@@ -44,9 +46,9 @@ final class SubscribeController implements HubControllerInterface
     /**
      * @codeCoverageIgnore
      */
-    public function getMethod(): string
+    public function getMethods(): array
     {
-        return 'get';
+        return ['GET', SubscriptionRequest::QUERY_METHOD];
     }
 
     /**
@@ -61,97 +63,124 @@ final class SubscribeController implements HubControllerInterface
         ServerRequestInterface $request,
         WritableStreamInterface&ReadableStreamInterface $stream = new ThroughStream(),
     ): ResponseInterface {
-        $subscribedTopics = $this->extractSubscribedTopics($request);
-        $allowedTopics = $this->extractAllowedTopics($request);
-        $lastEventId = extract_last_event_id($request);
-
-        $subscriber = new Subscriber($subscribedTopics);
-
-        if (null !== $lastEventId) {
-            async(
-                function () use ($lastEventId, $stream, $subscribedTopics, $allowedTopics) {
-                    foreach ($this->hub->reconciliate($lastEventId) as $update) {
-                        $this->sendUpdate($update, $stream, $subscribedTopics, $allowedTopics);
-                    }
-                }
-            )();
+        $legacy = $this->hub->isLegacyProtocol();
+        $store = $this->hub->getTopicMatcherStore();
+        $subscriptionRequest = SubscriptionRequest::fromRequest($request, $store, $legacy);
+        $grants = Grants::fromRequest($request, $store, $legacy);
+        if (null === $grants && !$this->hub->getOption('allow_anonymous')) {
+            throw BearerTokenException::missingToken('Anonymous subscriptions are not allowed on this hub.');
         }
 
-        async(
-            function () use ($stream, $subscribedTopics, $allowedTopics, $subscriber) {
-                $callback = fn(Update $update) => $this->sendUpdate(
-                    $update,
-                    $stream,
-                    $subscribedTopics,
-                    $allowedTopics
-                );
-                $subscriber->setCallback($callback);
-                $this->hub->subscribe($subscriber);
-                $stream->on('close', fn() => $this->hub->unsubscribe($subscriber));
+        $subscriber = new Subscriber($subscriptionRequest->matchers, $store, $grants);
 
-                $heartbeatInterval = (float) $this->hub->getOption('heartbeat_interval');
-                if ($heartbeatInterval > 0) {
-                    $timer = Loop::addPeriodicTimer(
-                        $heartbeatInterval,
-                        fn() => $stream->write(self::HEARTBEAT),
-                    );
-                    $stream->on('close', fn() => Loop::cancelTimer($timer));
+        // Live updates are buffered until the missed ones are sent, so that none is lost nor reordered
+        // while the history is being read.
+        $buffer = [];
+        $live = false;
+        $subscriber->setCallback(function (Update $update) use ($subscriber, $stream, &$buffer, &$live) {
+            if (!$subscriber->canReceive($update)) {
+                return;
+            }
+
+            if ($live) { // @phpstan-ignore if.alwaysFalse (set by reference once the missed updates are sent)
+                $stream->write((string) $update->message);
+            } else {
+                $buffer[] = $update;
+            }
+        });
+        $this->hub->subscribe($subscriber);
+        $this->dispatchSubscriptionEvents($subscriber, true);
+        $stream->on('close', function () use ($subscriber) {
+            $this->hub->unsubscribe($subscriber);
+            $this->dispatchSubscriptionEvents($subscriber, false);
+        });
+
+        $missed = [];
+        $headers = [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'private, no-cache, no-store, must-revalidate, max-age=0',
+            'X-Accel-Buffering' => 'no',
+            'Incremental' => '?1',
+            'Accept-Query' => SubscriptionRequest::FORM_MEDIA_TYPE,
+        ];
+        if ($subscriptionRequest->hasLastEventId) {
+            [$missed, $headers['Mercure-Last-Event-ID']] = $this->reconcile(
+                $subscriber,
+                $subscriptionRequest->lastEventId,
+            );
+            if ($legacy) {
+                $headers['Last-Event-ID'] = $headers['Mercure-Last-Event-ID'];
+            }
+        }
+
+        Loop::futureTick(function () use ($stream, $missed, &$buffer, &$live) {
+            $sent = [];
+            foreach ([...$missed, ...$buffer] as $update) {
+                if (!isset($sent[$update->message->id])) {
+                    $stream->write((string) $update->message);
+                    $sent[$update->message->id] = true;
                 }
             }
-        )();
+            $buffer = [];
+            $live = true;
+        });
 
-        return new Response(
-            200,
-            ['Content-Type' => 'text/event-stream'],
-            $stream
-        );
+        $heartbeatInterval = (float) $this->hub->getOption('heartbeat_interval');
+        if ($heartbeatInterval > 0) {
+            $timer = Loop::addPeriodicTimer(
+                $heartbeatInterval,
+                fn() => $stream->write(self::HEARTBEAT),
+            );
+            $stream->on('close', fn() => Loop::cancelTimer($timer));
+        }
+
+        return new Response(200, $headers, $stream);
     }
 
     /**
-     * @param string[] $subscribedTopics
-     * @param string[]|null $allowedTopics
+     * Returns the updates the subscriber missed and the ID of the event preceding the first one sent
+     * (the reconciliation cursor). Only events the subscriber may receive are disclosed.
+     *
+     * @return array{Update[], string}
      */
-    private function sendUpdate(
-        Update $update,
-        WritableStreamInterface $stream,
-        array $subscribedTopics,
-        ?array $allowedTopics,
-    ): void {
-        if (!$update->canBeReceived($subscribedTopics, $allowedTopics, $this->hub->getOption('allow_anonymous'))) {
+    private function reconcile(Subscriber $subscriber, ?string $lastEventId): array
+    {
+        if (null !== $lastEventId) {
+            $missed = [];
+            $history = $this->hub->reconciliate($lastEventId);
+            foreach ($history as $update) {
+                if ($subscriber->canReceive($update)) {
+                    $missed[] = $update;
+                }
+            }
+
+            if (true === $history->getReturn()) {
+                return [$missed, $lastEventId];
+            }
+        }
+
+        // Unknown (or empty) last event ID: nothing is replayed, the cursor is the latest receivable event.
+        $cursor = TransportInterface::EARLIEST;
+        foreach ($this->hub->reconciliate(TransportInterface::EARLIEST) as $update) {
+            if ($subscriber->canReceive($update)) {
+                $cursor = $update->message->id;
+            }
+        }
+
+        return [[], $cursor];
+    }
+
+    private function dispatchSubscriptionEvents(Subscriber $subscriber, bool $active): void
+    {
+        if (!$this->hub->getOption('subscriptions')) {
             return;
         }
 
-        $stream->write((string) $update->message);
-    }
-
-    /**
-     * @return string[]
-     */
-    private function extractSubscribedTopics(ServerRequestInterface $request): array
-    {
-        $qs = query_string($request->getUri(), new FlatQueryParser());
-        if (!$qs->hasParam('topic')) {
-            throw new BadRequestHttpException('Missing topic parameter.');
+        foreach ($subscriber->subscriptions as $subscription) {
+            $this->hub->publish(new Update(
+                [$subscription->getId()],
+                new Message(data: $subscription->toJson($active), private: true, event: self::RESERVED_EVENT_TYPE),
+            ));
         }
-
-        return (array) $qs->getParam('topic');
-    }
-
-    /**
-     * @return string[]|null
-     */
-    private function extractAllowedTopics(ServerRequestInterface $request): ?array
-    {
-        /** @var UnencryptedToken|null $jwt */
-        $jwt = $request->getAttribute('token');
-        if (null === $jwt) {
-            if (!$this->hub->getOption('allow_anonymous')) {
-                throw new AccessDeniedHttpException('Anonymous subscriptions are not allowed on this hub.');
-            }
-
-            return null;
-        }
-
-        return $jwt->claims()->get('mercure')['subscribe'] ?? null;
     }
 }

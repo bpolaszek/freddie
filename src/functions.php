@@ -12,6 +12,7 @@ use React\Promise\PromiseInterface;
 use function BenTools\QueryString\query_string;
 use function in_array;
 use function is_string;
+use function preg_match;
 use function React\Promise\Timer\timeout;
 use function settype;
 use function strtolower;
@@ -20,6 +21,16 @@ use function trim;
 function topic(string $topic): TopicHelper
 {
     return TopicHelper::instance()->with($topic);
+}
+
+/**
+ * Whether the string satisfies the protocol constraints on topics, matcher patterns and the id/type fields:
+ * valid UTF-8, without control characters (C0, DEL, C1) nor Unicode format characters (bidirectional and
+ * zero-width controls, which enable identifier spoofing).
+ */
+function is_valid_protocol_string(string $value): bool
+{
+    return 0 === preg_match('/[\p{Cc}\p{Cf}]/u', $value);
 }
 
 function is_truthy(mixed $value): bool

@@ -21,7 +21,7 @@ final readonly class CookieTokenExtractor implements PSR7TokenExtractorInterface
      * @param string|string[] $cookieName
      */
     public function __construct(
-        string|array $cookieName = 'mercureAuthorization',
+        string|array $cookieName = ChainTokenExtractor::COOKIE_NAME,
     ) {
         $this->cookieNames = (array) $cookieName;
     }

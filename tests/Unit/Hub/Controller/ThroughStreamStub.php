@@ -16,6 +16,8 @@ final class ThroughStreamStub implements WritableStreamInterface, ReadableStream
 
     public array $storage = [];
 
+    private bool $closed = false;
+
     public function write($data)
     {
         $this->storage[] = $data;
@@ -53,6 +55,12 @@ final class ThroughStreamStub implements WritableStreamInterface, ReadableStream
 
     public function close(): void
     {
+        // Idempotent, like React streams.
+        if ($this->closed) {
+            return;
+        }
+
+        $this->closed = true;
         $this->emit('close');
     }
 }

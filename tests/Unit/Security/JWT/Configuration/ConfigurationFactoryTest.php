@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Freddie\Tests\Unit\Security\JWT\Configuration;
 
 use Freddie\Security\JWT\Configuration\ConfigurationFactory;
+use InvalidArgumentException;
 use Lcobucci\JWT\Signer;
 
 use function dirname;
@@ -20,6 +21,13 @@ it('creates a symmetric configuration', function () {
     expect($config->signingKey()->contents())->toBe('foobar');
     expect($config->verificationKey()->contents())->toBe('foobar');
 });
+
+it('refuses a PEM key with an HMAC algorithm', function (string $key) {
+    (new ConfigurationFactory())('HS256', $key);
+})->with([
+    'file' => [dirname(__DIR__, 4) . '/config/jwt/public.pem'],
+    'contents' => [file_get_contents(dirname(__DIR__, 4) . '/config/jwt/public.pem')],
+])->throws(InvalidArgumentException::class, 'A PEM key cannot be used with an HMAC algorithm.');
 
 it('creates an asymmetric configuration', function () {
     $build = new ConfigurationFactory();

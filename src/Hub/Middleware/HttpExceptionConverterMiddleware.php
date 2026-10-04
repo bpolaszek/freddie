@@ -18,7 +18,7 @@ final readonly class HttpExceptionConverterMiddleware
         try {
             return $next($request);
         } catch (HttpException $e) {
-            return new Response($e->getStatusCode(), body: $e->getMessage());
+            return new Response($e->getStatusCode(), $e->getHeaders(), $e->getMessage());
         }
     }
 }

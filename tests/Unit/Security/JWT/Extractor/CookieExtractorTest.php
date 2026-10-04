@@ -12,7 +12,7 @@ it('extracts token from cookies', function () {
 
     $extractor = new CookieTokenExtractor();
     $request = new ServerRequest('GET', '/.well-known/mercure', [
-        'Cookie' => 'foo=bar; mercureAuthorization=' . $validToken . '; bar=foo',
+        'Cookie' => 'foo=bar; __Secure-mercure_access_token=' . $validToken . '; bar=foo',
     ]);
     expect($extractor->extract($request))->toBe($validToken);
 });
