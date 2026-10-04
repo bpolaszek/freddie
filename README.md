@@ -113,13 +113,20 @@ Publishers need the `publish` action on **every** topic of an update (private or
 | Variable              | Description                                                                                       | Default                          |
 |-----------------------|---------------------------------------------------------------------------------------------------|----------------------------------|
 | `JWT_ISSUER`          | The expected `iss` claim (any issuer is accepted when empty)                                       |                                  |
-| `RESOURCE_IDENTIFIER` | The expected `aud` claim, e.g. `https://example.com/.well-known/mercure`. Also the base URL relative URL patterns and topics are resolved against | Derived from the request         |
+| `RESOURCE_IDENTIFIER` | The expected `aud` claim, e.g. `https://example.com/.well-known/mercure`. Also the base URL relative URL patterns and topics are resolved against | `aud`: derived from the request; base URL: `http://mercure.invalid/.well-known/mercure` (relative patterns then only match relative topics) |
 | `COOKIE_NAME`         | The name of the cookie holding the access token                                                    | `__Secure-mercure_access_token` |
 | `ALLOW_ANONYMOUS`     | Whether subscribers may connect without a token                                                    | `true`                           |
 | `SUBSCRIPTIONS`       | Enables the subscription API and subscription events                                              | `false`                          |
+| `PROTOCOL_COMPATIBILITY` | `8` to support Mercure 0.x clients, see [below](#mercure-0x-compatibility)                      |                                  |
+| `HEARTBEAT_INTERVAL`  | Seconds between two SSE comments keeping connections alive (`0` disables them)                    | `40`                             |
+| `CORS_ORIGINS`        | The `Access-Control-Allow-Origin` value                                                            | The request's `Origin`           |
 
 ⚠️ When `RESOURCE_IDENTIFIER` is not set, the audience is derived from the `Host` / `X-Forwarded-*` request headers,
 which clients control: set it in production.
+
+⚠️ Subscription events are stored in the history like any update: with `SUBSCRIPTIONS` enabled, many (dis)connections
+can evict actual updates from a small history. The subscription API only lists the subscribers connected to the
+process serving the request, and does not serve the URLs of Mercure 0.x subscriptions (`/subscriptions/{topic}/...`).
 
 ### Subscribing
 
@@ -268,7 +275,7 @@ Publishing bigger updates to Freddie (through HTTP, at least) could result in 40
 | Last event ID (including `earliest`)        | ✅️                                    |
 | Customizable event type                     | ✅️                                    |
 | Customizable `retry` directive              | ✅️                                    |
-| CORS                                        | ❌ (configure them on your web server) |
+| CORS                                        | ✅ (`CORS_ORIGINS`)                    |
 | Health check endpoint                       | ❌ (PR welcome)                        |
 | Logging                                     | ❌ (PR welcome))️                      |
 | Metrics                                     | ❌ (PR welcome)️                       |
