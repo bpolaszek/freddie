@@ -14,7 +14,7 @@
         "ext-ctype": "*",
         "ext-iconv": "*",
         "bentools/querystring": "^1.1",
-        "bentools/url-pattern": "dev-main",
+        "bentools/url-pattern": "^1.0",
         "clue/framework-x": "dev-main#cfe017426d8acc7a92b5893a501728e034a873cc",
         "clue/redis-react": "^2.5",
         "doctrine/annotations": "^1.0",
