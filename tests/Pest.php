@@ -275,7 +275,12 @@ function subscriptions_request(string $path, ?string $jwt = null, array $headers
  */
 function publish_and_receive(array $env, string $subscribeQuery, string $publishBody, string $jwt): array
 {
-    $env = ['X_LISTEN' => $_ENV['X_LISTEN'] ?? '127.0.0.1:8080', 'TRANSPORT_DSN' => 'php://default', ...$env];
+    $env = [
+        'X_LISTEN' => $_ENV['X_LISTEN'] ?? '127.0.0.1:8080',
+        // The CI runs the integration tests against each transport of its matrix.
+        'TRANSPORT_DSN' => \getenv('TRANSPORT_DSN') ?: 'php://default',
+        ...$env,
+    ];
     foreach (\explode(',', $_ENV['SYMFONY_DOTENV_VARS'] ?? '') as $key) {
         $value = $_ENV[$key] ?? null;
         if (null === $value) {
