@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Freddie\Tests\Unit\Matcher;
 
+use BenTools\UrlPattern\URLPattern;
 use Freddie\Matcher\MatcherType;
 use Freddie\Matcher\TopicMatcher;
 use Freddie\Matcher\TopicMatcherStore;
 use InvalidArgumentException;
+use ReflectionProperty;
 
 it('matches topics', function (TopicMatcher $matcher, array $topics, bool $expected) {
     $store = new TopicMatcherStore();
@@ -61,18 +63,35 @@ it('rejects a relative base URL', function () {
 
 it('caches compiled patterns and match results within bounds', function () {
     $store = new TopicMatcherStore(cacheSize: 1);
-    $matcher = TopicMatcher::urlPattern('/books/:id');
+    $cache = fn (string $name): array => (new ReflectionProperty($store, $name))->getValue($store);
+    $books = TopicMatcher::urlPattern('/books/:id');
 
-    expect($store->matches(['/books/1'], $matcher))->toBeTrue()
-        ->and($store->matches(['/books/1'], $matcher))->toBeTrue() // cached result
-        ->and($store->matches(['/books/2'], $matcher))->toBeTrue() // evicts the previous result
-        ->and($store->matches(['/authors/2'], TopicMatcher::urlPattern('/authors/:id')))->toBeTrue();
+    // When
+    $store->matches(['/books/1'], $books);
+
+    // Then
+    expect($cache('urlPatterns'))->toHaveKey('/books/:id')
+        ->and($cache('matchResults'))->toBe(["/books/:id\0/books/1" => true]);
+
+    // When: the compiled pattern is replaced by a stub, a cached result is served without it
+    $stub = new URLPattern('/never', 'http://x');
+    (new ReflectionProperty($store, 'urlPatterns'))->setValue($store, ['/books/:id' => $stub]);
+    expect($store->matches(['/books/1'], $books))->toBeTrue()
+        // but the stub is used for a topic which is not cached yet, which evicts the previous result
+        ->and($store->matches(['/books/2'], $books))->toBeFalse()
+        ->and($cache('matchResults'))->toBe(["/books/:id\0/books/2" => false]);
+
+    // When: another pattern is compiled, the previous one is evicted
+    $store->matches(['/authors/1'], TopicMatcher::urlPattern('/authors/:id'));
+    expect(array_keys($cache('urlPatterns')))->toBe(['/authors/:id']);
 });
 
 it('works without cache', function () {
     $store = new TopicMatcherStore(cacheSize: 0);
 
-    expect($store->matches(['/books/1'], TopicMatcher::urlPattern('/books/:id')))->toBeTrue();
+    expect($store->matches(['/books/1'], TopicMatcher::urlPattern('/books/:id')))->toBeTrue()
+        ->and((new ReflectionProperty($store, 'urlPatterns'))->getValue($store))->toBe([])
+        ->and((new ReflectionProperty($store, 'matchResults'))->getValue($store))->toBe([]);
 });
 
 it('does not match when the pattern is invalid', function () {
