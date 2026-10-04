@@ -114,12 +114,19 @@ final class SubscribeController implements HubControllerInterface
         }
 
         Loop::futureTick(function () use ($stream, $missed, &$buffer, &$live) {
-            $sent = [];
-            foreach ([...$missed, ...$buffer] as $update) {
-                if (!isset($sent[$update->message->id])) {
-                    $stream->write((string) $update->message);
-                    $sent[$update->message->id] = true;
+            // A live update may also have been read from the history: it is sent once. IDs can be reused,
+            // so occurrences are counted rather than deduplicated by ID.
+            $pending = [];
+            foreach ($missed as $update) {
+                $stream->write((string) $update->message);
+                $pending[$update->message->id] = ($pending[$update->message->id] ?? 0) + 1;
+            }
+            foreach ($buffer as $update) {
+                if (($pending[$update->message->id] ?? 0) > 0) {
+                    $pending[$update->message->id]--;
+                    continue;
                 }
+                $stream->write((string) $update->message);
             }
             $buffer = [];
             $live = true;

@@ -7,12 +7,15 @@ namespace Freddie\Tests\Unit\Hub\Controller;
 use Freddie\Hub\Controller\SubscribeController;
 use Freddie\Hub\Hub;
 use Freddie\Hub\Transport\PHP\PHPTransport;
+use Freddie\Hub\Transport\TransportInterface;
 use Freddie\Message\Message;
 use Freddie\Message\Update;
 use Freddie\Security\BearerTokenException;
+use Generator;
 use Psr\Http\Message\ResponseInterface;
 use React\EventLoop\Loop;
 use React\Http\Message\ServerRequest;
+use React\Promise\PromiseInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotAcceptableHttpException;
 use Symfony\Component\HttpKernel\Exception\UnsupportedMediaTypeHttpException;
@@ -150,7 +153,7 @@ it('does not send the cursor when no last event ID is requested', function () {
     expect($response->hasHeader('Mercure-Last-Event-ID'))->toBeFalse();
 });
 
-it('does not lose nor duplicate updates published while reading the history', function () {
+it('does not lose updates published after the history was read', function () {
     $transport = new PHPTransport(size: 1000);
     $controller = subscribe_controller($transport);
     $stream = new ThroughStreamStub();
@@ -159,6 +162,71 @@ it('does not lose nor duplicate updates published while reading the history', fu
     // When: an update is published between the subscription and the flush of the missed ones
     $controller(new ServerRequest('GET', '/.well-known/mercure?match=/foo&last_event_id=earliest'), $stream);
     $transport->publish(new Update(['/foo'], $second = new Message(id: 'second')));
+    run_loop();
+
+    // Then
+    expect($stream->storage)->toBe([(string) $first, (string) $second]);
+});
+
+it('does not duplicate updates published while the history is read', function () {
+    // A transport reading its history asynchronously (like Redis): an update published meanwhile is both
+    // dispatched live and found in the history.
+    $inner = new PHPTransport(size: 1000);
+    $transport = new class ($inner) implements TransportInterface {
+        public ?Update $publishedWhileReading = null;
+
+        public function __construct(private PHPTransport $inner)
+        {
+        }
+
+        public function publish(Update $update): PromiseInterface
+        {
+            return $this->inner->publish($update);
+        }
+
+        public function subscribe(callable $callback): void
+        {
+            $this->inner->subscribe($callback);
+        }
+
+        public function unsubscribe(callable $callback): void
+        {
+            $this->inner->unsubscribe($callback);
+        }
+
+        public function reconciliate(string $lastEventID): Generator
+        {
+            if (null !== $this->publishedWhileReading) {
+                $this->inner->publish($this->publishedWhileReading);
+            }
+
+            return yield from $this->inner->reconciliate($lastEventID);
+        }
+    };
+    $controller = (new SubscribeController())
+        ->setHub(new Hub(transport: $transport, options: ['heartbeat_interval' => 0]));
+    $stream = new ThroughStreamStub();
+    $inner->publish(new Update(['/foo'], $first = new Message(id: 'first')));
+    $transport->publishedWhileReading = new Update(['/foo'], $second = new Message(id: 'second'));
+
+    // When
+    $controller(new ServerRequest('GET', '/.well-known/mercure?match=/foo&last_event_id=earliest'), $stream);
+    run_loop();
+
+    // Then
+    expect($stream->storage)->toBe([(string) $first, (string) $second]);
+});
+
+it('sends every update reusing an ID', function () {
+    $transport = new PHPTransport(size: 1000);
+    $controller = subscribe_controller($transport);
+    $stream = new ThroughStreamStub();
+    $transport->publish(new Update(['/foo'], new Message(id: 'start')));
+    $transport->publish(new Update(['/foo'], $first = new Message(id: 'reused', data: 'first')));
+    $transport->publish(new Update(['/foo'], $second = new Message(id: 'reused', data: 'second')));
+
+    // When
+    $controller(new ServerRequest('GET', '/.well-known/mercure?match=/foo&last_event_id=start'), $stream);
     run_loop();
 
     // Then
