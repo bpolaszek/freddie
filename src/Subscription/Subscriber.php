@@ -50,11 +50,16 @@ final class Subscriber
      */
     public function canReceive(Update $update): bool
     {
+        // Cheap check first: matching topics against URL patterns is not.
+        if ($update->message->private && null === $this->grants) {
+            return false;
+        }
+
         if (!$this->matchesAny($update->topics)) {
             return false;
         }
 
-        return !$update->message->private || (null !== $this->grants && $this->grants->canSubscribe($update->topics));
+        return !$update->message->private || $this->grants->canSubscribe($update->topics);
     }
 
     /**
