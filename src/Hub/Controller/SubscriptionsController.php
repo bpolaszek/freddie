@@ -19,8 +19,8 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 use function addcslashes;
+use function hash;
 use function json_encode;
-use function rawurlencode;
 
 use const JSON_THROW_ON_ERROR;
 use const JSON_UNESCAPED_SLASHES;
@@ -96,7 +96,10 @@ final class SubscriptionsController implements HubControllerInterface
         }
 
         $lastEventId = $this->getLastEventId();
-        $etag = '"' . rawurlencode($lastEventId) . '"';
+        $body = json_encode($document, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        // Derived from what is served: the subscribers are local to this process and the history may be disabled,
+        // so the last event ID alone does not tell whether the subscriptions changed.
+        $etag = '"' . hash('xxh128', $lastEventId . "\0" . $body) . '"';
         $headers = [
             'ETag' => $etag,
             'Cache-Control' => 'private, must-revalidate',
@@ -113,11 +116,7 @@ final class SubscriptionsController implements HubControllerInterface
             . '; type="' . SubscribeController::RESERVED_EVENT_TYPE . '"'
             . '; content-type="application/json"';
 
-        return new Response(
-            200,
-            $headers,
-            json_encode($document, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-        );
+        return new Response(200, $headers, $body);
     }
 
     /**

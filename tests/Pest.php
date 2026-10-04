@@ -237,7 +237,7 @@ function subscribe_controller(?PHPTransport $transport = null, array $options = 
 /**
  * @return array{App, Hub, SubscribeController}
  */
-function subscriptions_app(bool $enabled = true): array
+function subscriptions_app(bool $enabled = true, int $historySize = 10): array
 {
     $app = new App(
         new HttpExceptionConverterMiddleware(),
@@ -250,7 +250,7 @@ function subscriptions_app(bool $enabled = true): array
     $subscribeController = new SubscribeController();
     $hub = new Hub(
         $app,
-        new PHPTransport(size: 10),
+        new PHPTransport(size: $historySize),
         ['heartbeat_interval' => 0, 'subscriptions' => $enabled],
         [$subscribeController, new SubscriptionsController()],
     );

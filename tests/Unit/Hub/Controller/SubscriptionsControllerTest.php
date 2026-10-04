@@ -45,7 +45,7 @@ it('lists active subscriptions', function () {
     // Then
     expect($response->getStatusCode())->toBe(200)
         ->and($response->getHeaderLine('Content-Type'))->toBe('application/json')
-        ->and($response->getHeaderLine('ETag'))->toBe('"last"')
+        ->and($response->getHeaderLine('ETag'))->toMatch('/^"[0-9a-f]{32}"$/')
         ->and($response->getHeaderLine('Link'))->toBe(
             '</.well-known/mercure>; rel="mercure"; last-event-id="last"; type="mercure"; '
             . 'content-type="application/json"'
@@ -88,8 +88,7 @@ it('gets a single subscription', function () {
 
     expect($response->getStatusCode())->toBe(200)
         ->and(json_decode((string) $response->getBody(), true))->toBe($subscription->toArray(true))
-        // The subscription event is the latest one
-        ->and($response->getHeaderLine('ETag'))->toMatch('/^"[0-9A-Z]{26}"$/');
+        ->and($response->getHeaderLine('ETag'))->toMatch('/^"[0-9a-f]{32}"$/');
 });
 
 it('answers 404 for an unknown subscription', function () {
@@ -103,15 +102,28 @@ it('answers 404 for an unknown subscription', function () {
     expect($response->getStatusCode())->toBe(404);
 });
 
-it('answers 304 when the subscriptions did not change', function () {
-    [$app] = subscriptions_app();
+it('answers 304 until the subscriptions change', function () {
+    // The default transport keeps no history: the cursor alone cannot tell the subscriptions changed.
+    [$app, , $subscribe] = subscriptions_app(historySize: 0);
+    $etag = handle($app, subscriptions_request('/.well-known/mercure/subscriptions'))->getHeaderLine('ETag');
+    $conditional = fn () => handle(
+        $app,
+        subscriptions_request('/.well-known/mercure/subscriptions', headers: ['If-None-Match' => $etag]),
+    );
 
-    $request = subscriptions_request('/.well-known/mercure/subscriptions', headers: ['If-None-Match' => '"earliest"']);
+    // When nothing changed
+    $notModified = $conditional();
 
-    $response = handle($app, $request);
+    // When someone subscribes
+    $subscribe(new ServerRequest('GET', '/.well-known/mercure?match=/books/1'), new ThroughStreamStub());
+    $modified = $conditional();
 
-    expect($response->getStatusCode())->toBe(304)
-        ->and((string) $response->getBody())->toBe('');
+    // Then
+    expect($notModified->getStatusCode())->toBe(304)
+        ->and((string) $notModified->getBody())->toBe('')
+        ->and($notModified->getHeaderLine('ETag'))->toBe($etag)
+        ->and($modified->getStatusCode())->toBe(200)
+        ->and($modified->getHeaderLine('ETag'))->not->toBe($etag);
 });
 
 it('rejects unsupported matcher types', function () {
