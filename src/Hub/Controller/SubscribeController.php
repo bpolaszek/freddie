@@ -177,7 +177,7 @@ final class SubscribeController implements HubControllerInterface
             $this->hub->publish(new Update(
                 [$subscription->getId()],
                 new Message(data: $subscription->toJson($active), private: true, event: self::RESERVED_EVENT_TYPE),
-            ));
+            ))->catch(static fn () => null); // Best effort: a transport failure must not break the connection.
         }
     }
 }
