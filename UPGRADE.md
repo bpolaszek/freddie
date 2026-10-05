@@ -300,8 +300,9 @@ If you use Freddie as a Symfony bundle, or extend it:
   `Freddie\Security\BearerTokenException`.
 - `ChainTokenExtractor` is built with `ChainTokenExtractor::create()`, and `CookieTokenExtractor` reads the
   `__Secure-mercure_access_token` cookie by default.
-- `Update::canBePublished()`, `Update::canBeReceived()`, `TopicHelper`, `topic()` and `extract_last_event_id()` are
-  no longer used.
+- `Update::canBePublished()`, `Update::canBeReceived()`, `Freddie\Helper\TopicHelper`, `Freddie\topic()` and
+  `Freddie\extract_last_event_id()` are removed: use `Grants`, `Subscriber::canReceive()` and
+  `Freddie\Hub\Request\SubscriptionRequest` instead.
 
 The Redis wire format did not change: hubs of both versions can share a Redis instance during a rolling deploy.
 
