@@ -6,6 +6,8 @@
 Freddie is a PHP implementation of the [Mercure Hub Specification](https://mercure.rocks/spec) (protocol 1.0).
 Mercure 0.x clients are still supported through a [compatibility mode](#mercure-0x-compatibility).
 
+**Upgrading from a version implementing Mercure 0.x?** Read the [upgrade guide](UPGRADE.md).
+
 It is blazing fast, built on the shoulders of giants:
 - [PHP](https://www.php.net/releases/8.1/en.php) 8.1
 - [Framework X](https://framework-x.org/) and [ReactPHP](https://reactphp.org/)
