@@ -18,8 +18,10 @@ use function React\Promise\set_rejection_handler;
 use function usleep;
 
 /*
- * These tests need a real Redis, given without query string:
- * FREDDIE_TEST_REDIS_DSN=redis://localhost:6379 vendor/bin/pest tests/Integration/Hub/Transport/Redis
+ * These tests need a throwaway Redis, given without query string: CLIENT PAUSE and CLIENT KILL hit the
+ * whole server, so never point them at a Redis other clients use.
+ * docker run --rm -d -p 6380:6379 redis
+ * FREDDIE_TEST_REDIS_DSN=redis://localhost:6380 vendor/bin/pest tests/Integration/Hub/Transport/Redis
  *
  * A subscriber reconnecting with a Last-Event-ID makes reconciliate() LRANGE the whole stored list.
  * clue/redis-protocol re-parses a multi-bulk reply from its start on every TCP chunk, so a list of
