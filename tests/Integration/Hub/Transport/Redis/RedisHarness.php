@@ -27,7 +27,7 @@ use function str_repeat;
 /**
  * Drives a RedisTransport against the real Redis given by FREDDIE_TEST_REDIS_DSN.
  */
-final class RedisHarness
+final readonly class RedisHarness
 {
     public const string BACKLOG_KEY = 'freddie_watchdog_test';
     public const int BACKLOG_SIZE = 30000;
