@@ -21,6 +21,7 @@ use function gc_collect_cycles;
 use function getenv;
 use function iterator_to_array;
 use function microtime;
+use function min;
 use function React\Async\async;
 use function str_repeat;
 
@@ -75,16 +76,16 @@ final readonly class RedisHarness
     }
 
     /**
-     * Stores BACKLOG_SIZE updates of 1 KB each, all with the id "m".
+     * Stores $size updates of 1 KB each, all with the id "m".
      */
-    public static function fillBacklog(LoopInterface $loop): void
+    public static function fillBacklog(LoopInterface $loop, int $size = self::BACKLOG_SIZE): void
     {
         $client = (new Factory($loop))->createLazyClient((string) self::dsn());
         $update = new Update(['/x'], new Message(id: 'm', data: str_repeat('x', 1000)));
         $payload = (new RedisSerializer())->serialize($update);
         $filled = $client->del(self::BACKLOG_KEY);
-        for ($i = 0; $i < self::BACKLOG_SIZE; $i += 500) {
-            $batch = array_fill(0, 500, $payload);
+        for ($i = 0; $i < $size; $i += 500) {
+            $batch = array_fill(0, min(500, $size - $i), $payload);
             $filled = $filled->then(fn () => $client->rpush(self::BACKLOG_KEY, ...$batch));
         }
         self::settle($loop, $filled);

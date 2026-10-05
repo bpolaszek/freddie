@@ -144,3 +144,36 @@ it('does not watch Redis when pingInterval is 0', function () {
     // Then nothing ends the hub
     expect($run['died'])->toBeNull();
 });
+
+it('gives up a reconciliation that Redis does not answer and reads the next one on a new connection', function () {
+    RedisHarness::fillBacklog($this->loop, 3);
+    $transport = RedisHarness::createTransport($this->loop, 'pingInterval=0&reconciliationTimeout=0.5');
+    $stuck = $transport->reader;
+
+    // When Redis stops answering while a reconciliation reads the backlog
+    RedisHarness::command($this->loop, 'client', 'PAUSE', '1500');
+    $reconciled = null;
+    $elapsed = null;
+    $this->loop->addTimer(0.1, function () use ($transport, &$reconciled, &$elapsed) {
+        $started = microtime(true);
+        $reconciled = RedisHarness::reconciliate($transport);
+        $reconciled->then(null, function () use ($started, &$elapsed) {
+            $elapsed = microtime(true) - $started;
+            $this->loop->stop();
+        });
+    });
+    $run = RedisHarness::runHub($this->loop, 5, $this->rejections);
+
+    // Then the reconciliation rejects within its timeout, and the hub is still alive
+    expect(fn () => RedisHarness::settle($this->loop, $reconciled))->toThrow(TimeoutException::class);
+    expect($elapsed)->toBeLessThan(0.5 + 0.3);
+    expect($run['died'])->toBeNull();
+
+    // When the next subscriber reconnects once Redis answers again
+    usleep(1_500_000); // let the pause expire, loop stopped
+    $count = RedisHarness::settle($this->loop, RedisHarness::reconciliate($transport));
+
+    // Then its reconciliation goes through a new connection
+    expect($count)->toBe(2);
+    expect($transport->reader)->not->toBe($stuck);
+});

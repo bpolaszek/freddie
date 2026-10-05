@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Freddie\Hub\Transport\Redis;
 
 use Clue\React\Redis\Client;
+use Closure;
 use Evenement\EventEmitter;
 use Evenement\EventEmitterInterface;
 use Freddie\Hub\Hub;
@@ -13,6 +14,7 @@ use Freddie\Message\Update;
 use Generator;
 use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
+use React\Promise\Timer\TimeoutException;
 use RuntimeException;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -27,7 +29,7 @@ final class RedisTransport implements TransportInterface
      */
     private array $options;
     private bool $initialized = false;
-    public readonly Client $reader;
+    public Client $reader;
 
     /**
      * @param array<string, mixed> $options
@@ -38,10 +40,10 @@ final class RedisTransport implements TransportInterface
         private readonly RedisSerializer $serializer = new RedisSerializer(),
         private readonly EventEmitterInterface $eventEmitter = new EventEmitter(),
         array $options = [],
-        ?Client $reader = null,
+        private readonly ?Closure $createReader = null,
     ) {
         // Reconciliation replies can take seconds to stream, keep them off the pinged connection
-        $this->reader = $reader ?? $this->redis;
+        $this->reader = null !== $createReader ? ($createReader)() : $this->redis;
         $resolver = new OptionsResolver();
         $resolver->setDefaults([
             'size' => 0,
@@ -50,6 +52,7 @@ final class RedisTransport implements TransportInterface
             'key' => 'mercureUpdates',
             'pingInterval' => 2.0,
             'readTimeout' => 0.0,
+            'reconciliationTimeout' => 30.0,
         ]);
         $this->options = $resolver->resolve($options);
         if ($this->options['pingInterval']) {
@@ -105,8 +108,20 @@ final class RedisTransport implements TransportInterface
         }
 
         $yield = self::EARLIEST === $lastEventID;
-        // @phpstan-ignore-next-line
-        $payloads = await($this->reader->lrange($this->options['key'], -$this->options['size'], -1));
+        try {
+            // @phpstan-ignore-next-line
+            $payloads = await(maybeTimeout(
+                $this->reader->lrange($this->options['key'], -$this->options['size'], -1), // @phpstan-ignore-line
+                $this->options['reconciliationTimeout'],
+            ));
+        } catch (TimeoutException $e) {
+            if (null !== $this->createReader) {
+                // A cancelled command stays pending on the socket, only a new connection frees the next reads
+                $this->reader->close();
+                $this->reader = ($this->createReader)();
+            }
+            throw $e;
+        }
         foreach ($payloads as $payload) {
             $update = $this->serializer->deserialize($payload);
             if ($yield) {

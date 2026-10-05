@@ -52,3 +52,15 @@ it('reads the reconciliation backlog on a 3rd connection, not the pinged one', f
     expect($transport->reader)->not()->toBe($transport->redis);
     expect($transport->reader)->not()->toBe($transport->subscriber);
 });
+
+it('reads the reconciliation timeout from the DSN', function (string $dsn, float $expected) {
+    $factory = new RedisTransportFactory();
+    /** @var RedisTransport $transport */
+    $transport = $factory->create($dsn);
+    $options = (fn () => $this->options)->call($transport);
+    expect($options['reconciliationTimeout'])->toBe($expected);
+})->with(function () {
+    yield ['redis://localhost?pingInterval=0.0', 30.0];
+    yield ['redis://localhost?pingInterval=0.0&reconciliationTimeout=5', 5.0];
+    yield ['redis://localhost?pingInterval=0.0&reconciliationTimeout=0', 0.0];
+});

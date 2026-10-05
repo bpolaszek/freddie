@@ -26,6 +26,10 @@ final class RedisClientStub implements Client
 
     public bool $answersPings = true;
 
+    public bool $answersReads = true;
+
+    public bool $closed = false;
+
     public function __construct(
         public readonly ArrayObject $storage = new ArrayObject(),
         private EventEmitterInterface $eventEmitter = new EventEmitter(),
@@ -62,6 +66,10 @@ final class RedisClientStub implements Client
 
     public function lrange(string $key, int $from, int $to)
     {
+        if (!$this->answersReads) {
+            return new Promise(static fn () => null);
+        }
+
         $items = $this->storage[$key] ?? [];
         $firstIndex = $from;
         $length = count($items);
@@ -92,7 +100,7 @@ final class RedisClientStub implements Client
 
     public function close(): void
     {
-        throw new ShouldNotHappen(new \LogicException(__METHOD__));
+        $this->closed = true;
     }
 
     public function on($event, callable $listener)

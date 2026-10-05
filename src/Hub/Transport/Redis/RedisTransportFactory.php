@@ -30,7 +30,6 @@ final readonly class RedisTransportFactory implements TransportFactoryInterface
         $parsed = DsnParser::parse($dsn);
         $redis = $this->factory->createLazyClient($dsn);
         $subscriber = $this->factory->createLazyClient($dsn); // Create a 2nd, blocking connection to receive updates
-        $reader = $this->factory->createLazyClient($dsn); // Create a 3rd connection for reconciliation reads
 
         return new RedisTransport(
             $subscriber,
@@ -41,10 +40,12 @@ final readonly class RedisTransportFactory implements TransportFactoryInterface
                 'trimInterval' => (float) max(0, $parsed->getParameter('trimInterval', 0.0)),
                 'pingInterval' => (float) max(0, $parsed->getParameter('pingInterval', 2.0)),
                 'readTimeout' => (float) max(0, $parsed->getParameter('readTimeout', 0.0)),
+                'reconciliationTimeout' => (float) max(0, $parsed->getParameter('reconciliationTimeout', 30.0)),
                 'channel' => (string) $parsed->getParameter('channel', 'mercure'),
                 'key' => (string) $parsed->getParameter('key', 'mercureUpdates'),
             ],
-            reader: $reader,
+            // Create a 3rd connection for reconciliation reads, replaced when one of them times out
+            createReader: fn () => $this->factory->createLazyClient($dsn),
         );
     }
 }
