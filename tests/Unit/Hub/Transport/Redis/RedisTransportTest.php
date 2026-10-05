@@ -10,6 +10,9 @@ use Freddie\Hub\Transport\Redis\RedisTransport;
 use Freddie\Message\Message;
 use Freddie\Message\Update;
 use React\EventLoop\Loop;
+use React\Promise\Timer\TimeoutException;
+
+use function Freddie\Tests\reconciliate_in_loop;
 
 it('dispatches published updates', function () {
     $storage = new ArrayObject();
@@ -78,6 +81,49 @@ it('performs state reconciliation', function () {
 
     // Then
     expect($missedUpdates)->toEqual([$updates[9]]);
+});
+
+it('rejects a reconciliation that times out on the shared connection without closing it', function () {
+    $redis = new RedisClientStub();
+    $redis->answersReads = false;
+    $transport = new RedisTransport(new RedisClientStub(), $redis, options: [
+        'pingInterval' => 0.0,
+        'size' => 3,
+        'reconciliationTimeout' => 0.01,
+    ]);
+
+    // When the backlog read never answers
+    $reconciliation = fn () => reconciliate_in_loop($transport);
+
+    // Then the reconciliation rejects and the pinged connection stays open
+    expect($reconciliation)->toThrow(TimeoutException::class);
+    expect($redis->closed)->toBeFalse();
+    expect($transport->reader)->toBe($redis);
+});
+
+it('replaces a reader whose reconciliation timed out', function () {
+    $storage = new ArrayObject();
+    $readers = [new RedisClientStub($storage), new RedisClientStub($storage)];
+    $readers[0]->answersReads = false;
+    $createReader = function () use (&$readers) {
+        return array_shift($readers);
+    };
+    [$stuck, $fresh] = $readers;
+    $transport = new RedisTransport(new RedisClientStub(), new RedisClientStub($storage), options: [
+        'pingInterval' => 0.0,
+        'size' => 3,
+        'reconciliationTimeout' => 0.01,
+    ], createReader: $createReader);
+    $transport->publish(new Update(['/foo'], new Message(id: '1')));
+
+    // When the backlog read never answers
+    $reconciliation = fn () => reconciliate_in_loop($transport);
+
+    // Then the reconciliation rejects, the stuck reader is closed and the next read goes through a new one
+    expect($reconciliation)->toThrow(TimeoutException::class);
+    expect($stuck->closed)->toBeTrue();
+    expect($transport->reader)->toBe($fresh);
+    expect($reconciliation())->toHaveCount(1);
 });
 
 it('periodically trims the database', function () {

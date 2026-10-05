@@ -104,5 +104,6 @@ jobs:
       - name: Run tests
         env:
           TRANSPORT_DSN: ${{ matrix.transport }}
+          FREDDIE_TEST_REDIS_DSN: redis://localhost:6379
         run: vendor/bin/pest --testsuite='Integration tests'
 

@@ -6,14 +6,19 @@ namespace Freddie\Tests;
 
 use FrameworkX\App;
 use Freddie\Hub\Middleware\TokenExtractorMiddleware;
+use Freddie\Hub\Transport\Redis\RedisTransport;
 use Freddie\Security\JWT\Configuration\ConfigurationFactory;
 use Lcobucci\JWT\Configuration;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use React\EventLoop\Loop;
 use ReflectionClass;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
+use Throwable;
+
+use function React\Async\async;
 
 function handle(App $app, ServerRequestInterface $request): ResponseInterface
 {
@@ -58,6 +63,33 @@ function legacy_redis_serializer(): Serializer
     static $serializer;
 
     return $serializer ??= new Serializer([new ObjectNormalizer()], [new JsonEncoder()]);
+}
+
+/**
+ * Runs a reconciliation in a fiber of its own until it settles: a top-level await() would resume
+ * the test from inside the loop timer that rejects it.
+ */
+function reconciliate_in_loop(RedisTransport $transport): array
+{
+    $result = null;
+    async(fn () => \iterator_to_array($transport->reconciliate($transport::EARLIEST)))()->then(
+        function (array $updates) use (&$result) {
+            $result = $updates;
+            Loop::stop();
+        },
+        function (Throwable $e) use (&$result) {
+            $result = $e;
+            Loop::stop();
+        },
+    );
+    if (null === $result) {
+        Loop::run();
+    }
+    if ($result instanceof Throwable) {
+        throw $result;
+    }
+
+    return $result;
 }
 
 function create_jwt(array $claims): string
