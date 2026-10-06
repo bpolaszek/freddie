@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Freddie\Tests\Unit\Security\JWT\Extractor;
 
+use Freddie\Security\BearerTokenException;
 use Freddie\Security\JWT\Extractor\ChainTokenExtractor;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\ServerRequest;
@@ -30,12 +31,12 @@ it('extracts token either from the authorization header or the cookie', function
         ]),
         'expected' => VALID_TOKEN,
     ];
-    yield 'invalid header falls back to cookie' => [
+    yield 'cookie is ignored when the header is present, even with an invalid token' => [
         'request' => new ServerRequest('GET', '/.well-known/mercure', [
             'Cookie' => '__Secure-mercure_access_token=' . VALID_TOKEN,
             'Authorization' => 'Bearer foo',
         ]),
-        'expected' => VALID_TOKEN,
+        'expected' => 'foo',
     ];
     yield 'header' => [
         'request' => new ServerRequest('GET', '/.well-known/mercure', [
@@ -51,12 +52,6 @@ it('extracts token either from the authorization header or the cookie', function
     ];
     yield 'query parameter is ignored' => [
         'request' => new ServerRequest('GET', '/.well-known/mercure?authorization=' . VALID_TOKEN),
-        'expected' => null,
-    ];
-    yield 'invalid header' => [
-        'request' => new ServerRequest('GET', '/.well-known/mercure', [
-            'Authorization' => 'Bearer foobar',
-        ]),
         'expected' => null,
     ];
     yield 'nothing' => [
@@ -101,6 +96,16 @@ it('extracts tokens the legacy way in compatibility mode', function (
         'expected' => VALID_TOKEN,
     ];
 });
+
+it('does not fall back on the cookie when the header is malformed', function (bool $legacy) {
+    $request = new ServerRequest('GET', '/.well-known/mercure?authorization=' . VALID_TOKEN, [
+        'Cookie' => '__Secure-mercure_access_token=' . VALID_TOKEN,
+        'Authorization' => 'Basic Zm9vOmJhcg==',
+    ]);
+
+    ChainTokenExtractor::create($legacy)->extract($request);
+})->with(['1.0 mode' => [false], 'compatibility mode' => [true]])
+    ->throws(BearerTokenException::class, 'Invalid "Authorization" header.');
 
 it('uses a custom cookie name', function () {
     $request = new ServerRequest('GET', '/.well-known/mercure', ['Cookie' => 'custom=' . VALID_TOKEN]);

@@ -29,6 +29,14 @@ final class BearerTokenException extends HttpException
         return new self(401, $message, null);
     }
 
+    /**
+     * The token presentation is malformed.
+     */
+    public static function invalidRequest(string $message): self
+    {
+        return new self(400, $message, self::INVALID_REQUEST);
+    }
+
     public static function invalidToken(string $message): self
     {
         return new self(401, $message, self::INVALID_TOKEN);

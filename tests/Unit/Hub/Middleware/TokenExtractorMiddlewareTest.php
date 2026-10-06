@@ -157,3 +157,21 @@ it('uses the configured resource identifier', function () {
 
     expect($policy->resourceIdentifierFor($request))->toBe(RESOURCE_IDENTIFIER);
 });
+
+it('ignores the cookie when an Authorization header is present', function (string $header, int $expectedStatus) {
+    $token = null;
+    $app = token_app(access_token_policy(), $token);
+    $request = new ServerRequest('GET', '/', [
+        'Authorization' => $header,
+        'Cookie' => '__Secure-mercure_access_token=' . access_token(),
+    ]);
+
+    $response = handle($app, $request);
+
+    expect($response->getStatusCode())->toBe($expectedStatus)
+        ->and($token)->toBeNull();
+})->with([
+    'invalid token' => ['Bearer invalid', 401],
+    'invalid token, lowercase scheme' => ['bearer invalid', 401],
+    'other scheme' => ['Basic Zm9vOmJhcg==', 400],
+]);
