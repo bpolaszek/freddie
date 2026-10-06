@@ -171,6 +171,8 @@ $token = $config->builder()
 ```
 
 Short-lived tokens are now mandatory (`exp`): if your app minted long-lived tokens, it has to renew them.
+Authenticated subscriptions are closed when their token expires: subscribers reconnect with a fresh token (and
+their last event ID, so they miss nothing).
 
 ### 4. Migrate publishers
 
@@ -227,8 +229,9 @@ did. Note that `match` is a byte-for-byte comparison: a value containing `{` is 
 
 #### Authenticating
 
-Send the token in the `Authorization: Bearer …` header or in the `__Secure-mercure_access_token` cookie (the
-header takes precedence). Tokens in URLs are forbidden by [RFC 9700](https://www.rfc-editor.org/rfc/rfc9700):
+Send the token in the `Authorization: Bearer …` header or in the `__Secure-mercure_access_token` cookie. When the
+header is present, the cookie is ignored, even if the header token is invalid; a header using another scheme than
+`Bearer` (case-insensitive) is rejected. Tokens in URLs are forbidden by [RFC 9700](https://www.rfc-editor.org/rfc/rfc9700):
 the `authorization` query parameter is gone.
 
 The cookie name can be changed with `COOKIE_NAME`. The `__Secure-` prefix requires the cookie to be set with the
@@ -258,6 +261,7 @@ those of the controllers: in practice, the CORS middleware turned them into `200
 | No token where one is required                   | `403`  | `401`, `WWW-Authenticate: Bearer`                   |
 | Invalid, expired or malformed token              | `403`  | `401`, `WWW-Authenticate: Bearer error="invalid_token"` |
 | Valid token, insufficient grants                 | `403`  | `403`, `WWW-Authenticate: Bearer error="insufficient_scope"` |
+| Malformed `Authorization` header (not `Bearer <token>`) | ignored | `400`, `WWW-Authenticate: Bearer error="invalid_request"` |
 | Subscription refusing `text/event-stream` (`Accept`) | `200` | `406`                                               |
 
 ⚠️ Before this version, the CORS middleware turned every response into `200 OK`, errors included. Status codes
