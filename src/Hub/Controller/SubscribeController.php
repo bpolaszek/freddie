@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Freddie\Hub\Controller;
 
+use DateTimeImmutable;
 use Freddie\Hub\HubControllerInterface;
 use Freddie\Hub\HubInterface;
 use Freddie\Hub\Request\SubscriptionRequest;
@@ -13,6 +14,8 @@ use Freddie\Message\Update;
 use Freddie\Security\BearerTokenException;
 use Freddie\Security\Grants;
 use Freddie\Subscription\Subscriber;
+use Lcobucci\JWT\Token\RegisteredClaims;
+use Lcobucci\JWT\UnencryptedToken;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use React\EventLoop\Loop;
@@ -20,6 +23,9 @@ use React\Http\Message\Response;
 use React\Stream\ReadableStreamInterface;
 use React\Stream\ThroughStream;
 use React\Stream\WritableStreamInterface;
+
+use function max;
+use function microtime;
 
 final class SubscribeController implements HubControllerInterface
 {
@@ -73,17 +79,37 @@ final class SubscribeController implements HubControllerInterface
 
         $subscriber = new Subscriber($subscriptionRequest->matchers, $store, $grants);
 
+        // Authenticated connections must not outlive their access token: they are closed when it expires,
+        // and nothing is sent once it has expired.
+        $expiresAt = self::getExpiration($request);
+        $send = function (Update $update) use ($stream, $expiresAt): void {
+            if (null !== $expiresAt && $expiresAt <= new DateTimeImmutable()) {
+                $stream->close();
+
+                return;
+            }
+
+            $stream->write((string) $update->message);
+        };
+        if (null !== $expiresAt) {
+            $expiration = Loop::addTimer(
+                max(0.0, (float) $expiresAt->format('U.u') - microtime(true)),
+                fn () => $stream->close(),
+            );
+            $stream->on('close', fn () => Loop::cancelTimer($expiration));
+        }
+
         // Live updates are buffered until the missed ones are sent, so that none is lost nor reordered
         // while the history is being read.
         $buffer = [];
         $live = false;
-        $subscriber->setCallback(function (Update $update) use ($subscriber, $stream, &$buffer, &$live) {
+        $subscriber->setCallback(function (Update $update) use ($subscriber, $send, &$buffer, &$live) {
             if (!$subscriber->canReceive($update)) {
                 return;
             }
 
             if ($live) { // @phpstan-ignore if.alwaysFalse (set by reference once the missed updates are sent)
-                $stream->write((string) $update->message);
+                $send($update);
             } else {
                 $buffer[] = $update;
             }
@@ -113,20 +139,22 @@ final class SubscribeController implements HubControllerInterface
             }
         }
 
-        Loop::futureTick(function () use ($stream, $missed, &$buffer, &$live) {
+        Loop::futureTick(function () use ($send, $missed, &$buffer, &$live) {
             // A live update may also have been read from the history: it is sent once. IDs can be reused,
             // so occurrences are counted rather than deduplicated by ID.
             $pending = [];
             foreach ($missed as $update) {
-                $stream->write((string) $update->message);
-                $pending[$update->message->id] = ($pending[$update->message->id] ?? 0) + 1;
+                $send($update);
+                $key = self::occurrenceKey($update);
+                $pending[$key] = ($pending[$key] ?? 0) + 1;
             }
             foreach ($buffer as $update) {
-                if (($pending[$update->message->id] ?? 0) > 0) {
-                    $pending[$update->message->id]--;
+                $key = self::occurrenceKey($update);
+                if (($pending[$key] ?? 0) > 0) {
+                    $pending[$key]--;
                     continue;
                 }
-                $stream->write((string) $update->message);
+                $send($update);
             }
             $buffer = [];
             $live = true;
@@ -165,6 +193,23 @@ final class SubscribeController implements HubControllerInterface
         }
 
         return true === $history->getReturn() ? [$missed, $lastEventId] : [[], TransportInterface::EARLIEST];
+    }
+
+    private static function occurrenceKey(Update $update): string
+    {
+        return $update->message->id;
+    }
+
+    private static function getExpiration(ServerRequestInterface $request): ?DateTimeImmutable
+    {
+        $token = $request->getAttribute('token');
+        if (!$token instanceof UnencryptedToken) {
+            return null;
+        }
+
+        $expiresAt = $token->claims()->get(RegisteredClaims::EXPIRATION_TIME);
+
+        return $expiresAt instanceof DateTimeImmutable ? $expiresAt : null;
     }
 
     private function dispatchSubscriptionEvents(Subscriber $subscriber, bool $active): void

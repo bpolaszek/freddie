@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Freddie\Tests\Unit\Hub\Controller;
 
+use DateTimeImmutable;
 use Freddie\Hub\Controller\SubscribeController;
 use Freddie\Hub\Hub;
 use Freddie\Hub\Transport\PHP\PHPTransport;
@@ -231,6 +232,75 @@ it('sends every update reusing an ID', function () {
 
     // Then
     expect($stream->storage)->toBe([(string) $first, (string) $second]);
+});
+
+it('closes the connection when the access token expires', function () {
+    $transport = new PHPTransport();
+    $controller = subscribe_controller($transport);
+    $stream = new ThroughStreamStub();
+    $closed = false;
+    $stream->on('close', function () use (&$closed) {
+        $closed = true;
+    });
+    $request = with_token(
+        new ServerRequest('GET', '/.well-known/mercure?match=/foo'),
+        access_token([detail(['subscribe'], ['/foo'])], ['exp' => new DateTimeImmutable('+50 milliseconds')]),
+    );
+
+    // When: an update is delivered before the expiration, another one after
+    $controller($request, $stream);
+    run_loop();
+    $transport->publish(new Update(['/foo'], $before = new Message(data: 'before', private: true)));
+    run_loop(0.1);
+    $closedOnExpiration = $closed;
+    $transport->publish(new Update(['/foo'], new Message(data: 'after', private: true)));
+
+    // Then
+    expect($closedOnExpiration)->toBeTrue()
+        ->and($stream->storage)->toBe([(string) $before]);
+});
+
+it('does not replay missed updates with an expired access token', function () {
+    $transport = new PHPTransport(size: 1000);
+    $controller = subscribe_controller($transport);
+    $stream = new ThroughStreamStub();
+    $transport->publish(new Update(['/foo'], new Message(data: 'missed')));
+    $closed = false;
+    $stream->on('close', function () use (&$closed) {
+        $closed = true;
+    });
+    // Signature and expiration are not validated by with_token()
+    $request = with_token(
+        new ServerRequest('GET', '/.well-known/mercure?match=/foo&last_event_id=earliest'),
+        access_token([detail(['subscribe'], ['/foo'])], ['exp' => new DateTimeImmutable('-1 second')]),
+    );
+
+    // When
+    $controller($request, $stream);
+    run_loop();
+
+    // Then
+    expect($closed)->toBeTrue()
+        ->and($stream->storage)->toBe([]);
+});
+
+it('keeps connections without token expiration open', function () {
+    $controller = subscribe_controller(options: ['protocol_compatibility' => 8]);
+    $stream = new ThroughStreamStub();
+    $closed = false;
+    $stream->on('close', function () use (&$closed) {
+        $closed = true;
+    });
+    $request = with_token(
+        new ServerRequest('GET', '/.well-known/mercure?topic=/foo'),
+        create_jwt(['mercure' => ['subscribe' => ['/foo']]]),
+        legacy: true,
+    );
+
+    $controller($request, $stream);
+    run_loop(0.05);
+
+    expect($closed)->toBeFalse();
 });
 
 it('subscribes the legacy way in compatibility mode', function () {
