@@ -3,7 +3,10 @@
 
 # Freddie
 
-Freddie is a PHP implementation of the [Mercure Hub Specification](https://mercure.rocks/spec).
+Freddie is a PHP implementation of the [Mercure Hub Specification](https://mercure.rocks/spec) (protocol 1.0).
+Mercure 0.x clients are still supported through a [compatibility mode](#mercure-0x-compatibility).
+
+**Upgrading from a version implementing Mercure 0.x?** Read the [upgrade guide](UPGRADE.md).
 
 It is blazing fast, built on the shoulders of giants:
 - [PHP](https://www.php.net/releases/8.1/en.php) 8.1
@@ -26,7 +29,8 @@ bin/freddie
 
 This will start a Freddie instance on `127.0.0.1:8080`, with anonymous subscriptions enabled.
 
-You can publish updates to the hub by generating a valid JWT signed with the `!ChangeMe!` key with `HMAC SHA256` algorithm.
+You can publish updates to the hub by generating a valid [access token](#security) signed with the
+`!ChangeThisMercureHubJWTSecretKey!` key with `HMAC SHA256` algorithm.
 
 To change these values, see [Security](#security).
 
@@ -67,14 +71,92 @@ To change this address, use the `X_LISTEN` environment variable:
 X_LISTEN="0.0.0.0:8000" ./bin/freddie
 ```
 
-### Security 
+### Security
 
-The default JWT key is `!ChangeMe!` with a `HS256` signature. 
+The default JWT key is `!ChangeThisMercureHubJWTSecretKey!` with a `HS256` signature.
 
 You can set different values by changing the environment variables (in `.env.local` or at the OS level): 
-`X_LISTEN`, `JWT_SECRET_KEY`, `JWT_ALGORITHM`, `JWT_PUBLIC_KEY` and `JWT_PASSPHRASE` (when using RS512 or ECDSA)
+`X_LISTEN`, `JWT_SECRET_KEY`, `JWT_ALGORITHM`, `JWT_PUBLIC_KEY` and `JWT_PASSPHRASE` (when using RS512 or ECDSA).
+HMAC secrets must be at least 256 bits long, and PEM keys cannot be used with HMAC algorithms.
 
-Please refer to the [authorization](https://mercure.rocks/spec#authorization) section of the Mercure specification to authenticate as a publisher and/or a subscriber.
+Publishers and subscribers authenticate with an [RFC 9068](https://www.rfc-editor.org/rfc/rfc9068) access token,
+through the `Authorization: Bearer <token>` header or the `__Secure-mercure_access_token` cookie
+(the header takes precedence). The token must:
+- have a `typ` header set to `at+jwt`;
+- carry `iss`, `aud` and `exp` claims;
+- grant actions through an [RFC 9396](https://www.rfc-editor.org/rfc/rfc9396) `authorization_details` claim:
+
+```json
+{
+  "typ": "at+jwt",
+  "alg": "HS256"
+}
+{
+  "iss": "https://example.com",
+  "aud": "https://example.com/.well-known/mercure",
+  "exp": 4102444800,
+  "authorization_details": [
+    {
+      "type": "https://mercure.rocks/authorization-detail",
+      "actions": ["publish", "subscribe"],
+      "topics": [
+        {"match": "https://example.com/books/:id", "match_type": "urlpattern"},
+        {"match": "https://example.com/authors/1"}
+      ],
+      "payload": {"user": "https://example.com/users/1"}
+    }
+  ]
+}
+```
+
+Publishers need the `publish` action on **every** topic of an update (private or not). Subscribers need the
+`subscribe` action on at least one topic of a private update to receive it. `{"match": "*"}` grants every topic.
+
+| Variable              | Description                                                                                       | Default                          |
+|-----------------------|---------------------------------------------------------------------------------------------------|----------------------------------|
+| `JWT_ISSUER`          | The expected `iss` claim (any issuer is accepted when empty)                                       |                                  |
+| `RESOURCE_IDENTIFIER` | The expected `aud` claim, e.g. `https://example.com/.well-known/mercure`. Also the base URL relative URL patterns and topics are resolved against | `aud`: derived from the request; base URL: `http://mercure.invalid/.well-known/mercure` (relative patterns then only match relative topics) |
+| `COOKIE_NAME`         | The name of the cookie holding the access token                                                    | `__Secure-mercure_access_token` |
+| `ALLOW_ANONYMOUS`     | Whether subscribers may connect without a token                                                    | `true`                           |
+| `SUBSCRIPTIONS`       | Enables the subscription API and subscription events                                              | `false`                          |
+| `PROTOCOL_COMPATIBILITY` | `8` to support Mercure 0.x clients, see [below](#mercure-0x-compatibility)                      |                                  |
+| `HEARTBEAT_INTERVAL`  | Seconds between two SSE comments keeping connections alive (`0` disables them)                    | `40`                             |
+| `CORS_ORIGINS`        | The `Access-Control-Allow-Origin` value                                                            | The request's `Origin`           |
+
+⚠️ When `RESOURCE_IDENTIFIER` is not set, the audience is derived from the `Host` / `X-Forwarded-*` request headers,
+which clients control: set it in production.
+
+⚠️ Subscription events are stored in the history like any update: with `SUBSCRIPTIONS` enabled, many (dis)connections
+can evict actual updates from a small history. The subscription API only lists the subscribers connected to the
+process serving the request, and does not serve the URLs of Mercure 0.x subscriptions (`/subscriptions/{topic}/...`).
+
+### Subscribing
+
+Subscribers select topics with matchers: `match` (or `match_exact`) for exact matching,
+`match_urlpattern` for [URL patterns](https://urlpattern.spec.whatwg.org/):
+
+```
+GET /.well-known/mercure?match=https://example.com/authors/1&match_urlpattern=https://example.com/books/:id
+```
+
+Matchers can also be sent in an `application/x-www-form-urlencoded` body with the `QUERY` method, to work around
+URL length limits. Missed updates are replayed with the `Last-Event-ID` header or the `last_event_id` query parameter;
+the reconciliation cursor is returned in the `Mercure-Last-Event-ID` response header.
+
+### Mercure 0.x compatibility
+
+Set `PROTOCOL_COMPATIBILITY=8` to keep Mercure 0.x (protocol version 8) clients working while you migrate them:
+- the `topic` query parameter (exact match or [URI Template](https://www.rfc-editor.org/rfc/rfc6570)),
+- the `mercure.publish` / `mercure.subscribe` / `mercure.payload` claims, with any signed JWT (`typ`, `iss`, `aud`
+  and `exp` are not required),
+- the `mercureAuthorization` cookie and the `authorization` query parameter,
+- the `lastEventID` query parameter, the `Last-Event-ID` response header,
+- the `event` field and truthy values of the `private` field when publishing,
+- public updates published with any token having a `mercure.publish` claim (only private ones are checked).
+
+Access tokens with `authorization_details` and `match*` parameters are accepted in this mode too, so clients can be
+migrated one at a time. Error status codes follow protocol 1.0 in both modes (`401` with a `WWW-Authenticate: Bearer`
+challenge for missing or invalid tokens, `403` with `error="insufficient_scope"` for insufficient grants).
 
 ### PHP Transport (default)
 
@@ -178,12 +260,16 @@ Publishing bigger updates to Freddie (through HTTP, at least) could result in 40
 
 | Feature                                     | Covered                               |
 |---------------------------------------------|---------------------------------------|
-| JWT through `Authorization` header          | ✅                                     |
-| JWT through `mercureAuthorization` Cookie   | ✅                                     |
+| Access tokens through `Authorization` header | ✅                                    |
+| Access tokens through cookie                | ✅                                     |
+| `authorization_details` (RFC 9396) grants   | ✅                                     |
 | Allow anonymous subscribers                 | ✅                                     |
 | Alternate topics                            | ✅️                                    |
 | Private updates                             | ✅                                     |
-| URI Templates for topics                    | ✅                                     |
+| Exact and URL Pattern matchers              | ✅                                     |
+| `QUERY` subscriptions                       | ✅                                     |
+| Subscription API and events                 | ✅ (subscribers of the current process only) |
+| Mercure 0.x compatibility mode              | ✅                                     |
 | HMAC SHA256 JWT signatures                  | ✅                                     |
 | RS512 JWT signatures                        | ✅                                     |
 | Environment variables configuration         | ✅                                     |
@@ -191,13 +277,12 @@ Publishing bigger updates to Freddie (through HTTP, at least) could result in 40
 | Last event ID (including `earliest`)        | ✅️                                    |
 | Customizable event type                     | ✅️                                    |
 | Customizable `retry` directive              | ✅️                                    |
-| CORS                                        | ❌ (configure them on your web server) |
+| CORS                                        | ✅ (`CORS_ORIGINS`)                    |
 | Health check endpoint                       | ❌ (PR welcome)                        |
 | Logging                                     | ❌ (PR welcome))️                      |
 | Metrics                                     | ❌ (PR welcome)️                       |
 | Different JWTs for subscribers / publishers | ❌ (PR welcome)                        |
-| Subscription API                            | ❌️ (TODO)                             |
-
+| Protected resource metadata (RFC 9728)      | ❌ (PR welcome)                        |
 
 ## Tests
 

@@ -57,6 +57,8 @@ final class PHPTransport implements TransportInterface
                 $yield = true;
             }
         }
+
+        return $yield;
     }
 
     private function store(Update $update): void
