@@ -234,6 +234,21 @@ it('sends every update reusing an ID', function () {
     expect($stream->storage)->toBe([(string) $first, (string) $second]);
 });
 
+it('does not mistake an update reusing an ID for one already replayed', function () {
+    $transport = new PHPTransport(size: 1000);
+    $controller = subscribe_controller($transport);
+    $stream = new ThroughStreamStub();
+    $transport->publish(new Update(['/foo'], $old = new Message(id: 'reused', data: 'old')));
+
+    // When: an update reusing the ID is published after the history was read, before the flush
+    $controller(new ServerRequest('GET', '/.well-known/mercure?match=/foo&last_event_id=earliest'), $stream);
+    $transport->publish(new Update(['/foo'], $new = new Message(id: 'reused', data: 'new')));
+    run_loop();
+
+    // Then
+    expect($stream->storage)->toBe([(string) $old, (string) $new]);
+});
+
 it('closes the connection when the access token expires', function () {
     $transport = new PHPTransport();
     $controller = subscribe_controller($transport);

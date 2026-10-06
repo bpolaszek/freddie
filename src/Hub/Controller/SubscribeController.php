@@ -24,8 +24,11 @@ use React\Stream\ReadableStreamInterface;
 use React\Stream\ThroughStream;
 use React\Stream\WritableStreamInterface;
 
+use function json_encode;
 use function max;
 use function microtime;
+
+use const JSON_THROW_ON_ERROR;
 
 final class SubscribeController implements HubControllerInterface
 {
@@ -140,8 +143,8 @@ final class SubscribeController implements HubControllerInterface
         }
 
         Loop::futureTick(function () use ($send, $missed, &$buffer, &$live) {
-            // A live update may also have been read from the history: it is sent once. IDs can be reused,
-            // so occurrences are counted rather than deduplicated by ID.
+            // A live update may also have been read from the history: it is sent once. Publishers can reuse IDs,
+            // so occurrences of the whole update are counted rather than deduplicated by ID.
             $pending = [];
             foreach ($missed as $update) {
                 $send($update);
@@ -195,9 +198,13 @@ final class SubscribeController implements HubControllerInterface
         return true === $history->getReturn() ? [$missed, $lastEventId] : [[], TransportInterface::EARLIEST];
     }
 
+    /**
+     * Identifies an update by its whole content: the transports provide no occurrence identifier, and the
+     * history and the live stream may hold distinct instances of the same update (e.g. with Redis).
+     */
     private static function occurrenceKey(Update $update): string
     {
-        return $update->message->id;
+        return json_encode([$update->topics, $update->message->private], JSON_THROW_ON_ERROR) . $update->message;
     }
 
     private static function getExpiration(ServerRequestInterface $request): ?DateTimeImmutable
