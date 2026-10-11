@@ -51,6 +51,7 @@ it('receives updates and dumps them into the stream', function () {
     // Then
     expect($response->getStatusCode())->toBe(200)
         ->and($response->getHeaderLine('Content-Type'))->toBe('text/event-stream')
+        ->and($response->getHeaderLine('Expires'))->toBe('0')
         ->and($response->getHeaderLine('Incremental'))->toBe('?1')
         ->and($response->getHeaderLine('Accept-Query'))->toBe('application/x-www-form-urlencoded')
         ->and($response->getHeaderLine('Mercure-Last-Event-ID'))->toBe('earliest')

@@ -128,6 +128,8 @@ final class SubscribeController implements HubControllerInterface
         $headers = [
             'Content-Type' => 'text/event-stream',
             'Cache-Control' => 'private, no-cache, no-store, must-revalidate, max-age=0',
+            // For HTTP/1.0 caches, which ignore Cache-Control.
+            'Expires' => '0',
             'X-Accel-Buffering' => 'no',
             'Incremental' => '?1',
             'Accept-Query' => SubscriptionRequest::FORM_MEDIA_TYPE,
