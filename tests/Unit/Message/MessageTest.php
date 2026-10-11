@@ -12,27 +12,31 @@ it('stringifies messages', function (Message $message, string $expected) {
 })->with(function () {
     yield [
         new Message(id: '1'),
-        "id:1\n\n",
+        "id: 1\n\n",
     ];
     yield [
         new Message(id: '1', event: 'message'),
-        "id:1\nevent:message\n\n",
+        "id: 1\nevent: message\n\n",
     ];
     yield [
         new Message(id: '1', private: true, event: 'message'),
-        "id:1\nevent:message\n\n",
+        "id: 1\nevent: message\n\n",
     ];
     yield [
         new Message(id: '1', event: 'message', retry: 3),
-        "id:1\nevent:message\nretry:3\n\n",
+        "id: 1\nevent: message\nretry: 3\n\n",
     ];
     yield [
         new Message(id: '1', data: 'bar', event: 'message'),
-        "id:1\nevent:message\ndata:bar\n\n",
+        "id: 1\nevent: message\ndata: bar\n\n",
     ];
     yield [
         new Message(id: '1', data: "foo\nbar", event: 'message'),
-        "id:1\nevent:message\ndata:foo\ndata:bar\n\n",
+        "id: 1\nevent: message\ndata: foo\ndata: bar\n\n",
+    ];
+    yield 'any line terminator' => [
+        new Message(id: '1', data: "foo\r\nbar\rid:2\nbaz"),
+        "id: 1\ndata: foo\ndata: bar\ndata: id:2\ndata: baz\n\n",
     ];
 });
 

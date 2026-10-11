@@ -97,7 +97,7 @@ final class RedisTransport implements TransportInterface
     {
         $this->init();
         if ($this->options['size'] <= 0) {
-            return; // @codeCoverageIgnore
+            return false; // @codeCoverageIgnore
         }
 
         $yield = self::EARLIEST === $lastEventID;
@@ -112,6 +112,8 @@ final class RedisTransport implements TransportInterface
                 $yield = true;
             }
         }
+
+        return $yield;
     }
 
     /**

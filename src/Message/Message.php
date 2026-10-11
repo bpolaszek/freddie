@@ -6,8 +6,7 @@ namespace Freddie\Message;
 
 use Symfony\Component\Uid\Ulid;
 
-use function explode;
-use function str_contains;
+use function preg_split;
 
 use const PHP_EOL;
 
@@ -25,27 +24,27 @@ final readonly class Message
         $this->id = $id ?? (string) new Ulid();
     }
 
+    /**
+     * Fields are written as "name: value": SSE parsers strip one space after the colon, so a value
+     * starting with a space would otherwise lose it.
+     */
     public function __toString(): string
     {
-        $output = 'id:' . $this->id . PHP_EOL;
+        $output = 'id: ' . $this->id . PHP_EOL;
 
         if (null !== $this->event) {
-            $output .= 'event:' . $this->event . PHP_EOL;
+            $output .= 'event: ' . $this->event . PHP_EOL;
         }
 
         if (null !== $this->retry) {
-            $output .= 'retry:' . $this->retry . PHP_EOL;
+            $output .= 'retry: ' . $this->retry . PHP_EOL;
         }
 
         if (null !== $this->data) {
-            // If $data contains line breaks, we have to serialize it in a different way
-            if (str_contains($this->data, PHP_EOL)) {
-                $lines = explode(PHP_EOL, $this->data);
-                foreach ($lines as $line) {
-                    $output .= 'data:' . $line . PHP_EOL;
-                }
-            } else {
-                $output .= 'data:' . $this->data . PHP_EOL;
+            // Each line of $data needs its own field: SSE parsers treat CRLF, LF and CR alike as line ends,
+            // so a lone CR must not be able to inject another field.
+            foreach (preg_split('/\r\n|\r|\n/', $this->data) ?: [] as $line) {
+                $output .= 'data: ' . $line . PHP_EOL;
             }
         }
 

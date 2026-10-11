@@ -22,8 +22,11 @@ interface TransportInterface
     public function unsubscribe(callable $callback): void;
 
     /**
+     * Yields the updates published after the given event ID (all of them for "earliest").
+     * The generator returns whether that event was found in the history.
+     *
      * @param string $lastEventID
-     * @return Generator<Update>
+     * @return Generator<int, Update, mixed, bool>
      */
     public function reconciliate(string $lastEventID): Generator;
 }

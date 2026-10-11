@@ -44,5 +44,17 @@ it('decorates response with CORS mechanism with default corsOrigin setup', funct
     expect($response->getHeaderLine('Access-Control-Allow-Origin'))->toBe('null')
         ->and($response->getHeaderLine('Access-Control-Allow-Methods'))->toBe('*')
         ->and($response->getHeaderLine('Access-Control-Allow-Headers'))->toBe('*')
-        ->and($response->getHeaderLine('Access-Control-Allow-Credentials'))->toBe('true');
+        ->and($response->getHeaderLine('Access-Control-Allow-Credentials'))->toBe('true')
+        ->and($response->getHeaderLine('Access-Control-Expose-Headers'))
+        ->toBe('Mercure-Last-Event-ID, Last-Event-ID, Link, WWW-Authenticate, Accept-Query')
+        ->and($response->getStatusCode())->toBe(400);
+});
+
+it('answers preflight requests successfully', function () {
+    $app = new App(new CorsMiddleware(), fn () => new Response(405));
+
+    $response = handle($app, new ServerRequest('OPTIONS', '/.well-known/mercure'));
+
+    expect($response->getStatusCode())->toBe(200)
+        ->and($response->getHeaderLine('Access-Control-Allow-Origin'))->toBe('*');
 });

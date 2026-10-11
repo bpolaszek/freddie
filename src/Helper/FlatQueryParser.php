@@ -26,7 +26,7 @@ final readonly class FlatQueryParser implements QueryStringParserInterface
                 $params[$key] = null;
                 continue;
             }
-            [$key, $value] = explode('=', $pair);
+            [$key, $value] = explode('=', $pair, 2);
             $key = urldecode($key);
             $value = urldecode($value);
             if (!isset($params[$key])) {
