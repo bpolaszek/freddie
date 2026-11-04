@@ -273,7 +273,10 @@ function subscriptions_request(string $path, ?string $jwt = null, array $headers
 /**
  * Starts a hub, subscribes to it, publishes an update and returns the received messages.
  */
-function publish_and_receive(array $env, string $subscribeQuery, string $publishBody, string $jwt): array
+/**
+ * @return array{Process, string} The running hub and its endpoint
+ */
+function start_hub(array $env): array
 {
     $env = [
         'X_LISTEN' => $_ENV['X_LISTEN'] ?? '127.0.0.1:8080',
@@ -288,11 +291,17 @@ function publish_and_receive(array $env, string $subscribeQuery, string $publish
         }
         $env[$key] ??= $_ENV[$key];
     }
-    $endpoint = \sprintf('http://%s/.well-known/mercure', $env['X_LISTEN']);
     $process = new Process(['bin/freddie',], \dirname(__DIR__), $env);
     $process->start();
 
     \usleep(1500000); // Wait for process to actually start
+
+    return [$process, \sprintf('http://%s/.well-known/mercure', $env['X_LISTEN'])];
+}
+
+function publish_and_receive(array $env, string $subscribeQuery, string $publishBody, string $jwt): array
+{
+    [$process, $endpoint] = start_hub($env);
 
     $messages = [];
     $listener = null;

@@ -82,12 +82,13 @@ final class SubscribeController implements HubControllerInterface
 
         $subscriber = new Subscriber($subscriptionRequest->matchers, $store, $grants);
 
-        // Authenticated connections must not outlive their access token: they are closed when it expires,
-        // and nothing is sent once it has expired.
+        // Authenticated connections must not outlive their access token: they are ended when it expires, and
+        // nothing is sent once it has expired. end() rather than close(): the server only terminates the response
+        // on "end".
         $expiresAt = self::getExpiration($request);
         $send = function (Update $update) use ($stream, $expiresAt): void {
             if (null !== $expiresAt && $expiresAt <= new DateTimeImmutable()) {
-                $stream->close();
+                $stream->end();
 
                 return;
             }
@@ -97,7 +98,7 @@ final class SubscribeController implements HubControllerInterface
         if (null !== $expiresAt) {
             $expiration = Loop::addTimer(
                 max(0.0, (float) $expiresAt->format('U.u') - microtime(true)),
-                fn () => $stream->close(),
+                fn () => $stream->end(),
             );
             $stream->on('close', fn () => Loop::cancelTimer($expiration));
         }

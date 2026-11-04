@@ -50,7 +50,13 @@ final class ThroughStreamStub implements WritableStreamInterface, ReadableStream
 
     public function end($data = null): void
     {
-        throw new ShouldNotHappen(new LogicException(__METHOD__));
+        // Idempotent, like React streams.
+        if ($this->closed) {
+            return;
+        }
+
+        $this->emit('end');
+        $this->close();
     }
 
     public function close(): void

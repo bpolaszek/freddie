@@ -250,29 +250,30 @@ it('does not mistake an update reusing an ID for one already replayed', function
     expect($stream->storage)->toBe([(string) $old, (string) $new]);
 });
 
-it('closes the connection when the access token expires', function () {
+it('ends the response when the access token expires', function () {
     $transport = new PHPTransport();
     $controller = subscribe_controller($transport);
     $stream = new ThroughStreamStub();
-    $closed = false;
-    $stream->on('close', function () use (&$closed) {
-        $closed = true;
+    $ended = false;
+    $stream->on('end', function () use (&$ended) {
+        $ended = true;
     });
     $request = with_token(
         new ServerRequest('GET', '/.well-known/mercure?match=/foo'),
         access_token([detail(['subscribe'], ['/foo'])], ['exp' => new DateTimeImmutable('+50 milliseconds')]),
     );
 
+    // A mere close() would leave the connection open: React only terminates a response on "end".
     // When: an update is delivered before the expiration, another one after
     $controller($request, $stream);
     run_loop();
     $transport->publish(new Update(['/foo'], $before = new Message(data: 'before', private: true)));
     run_loop(0.1);
-    $closedOnExpiration = $closed;
+    $endedOnExpiration = $ended;
     $transport->publish(new Update(['/foo'], new Message(data: 'after', private: true)));
 
     // Then
-    expect($closedOnExpiration)->toBeTrue()
+    expect($endedOnExpiration)->toBeTrue()
         ->and($stream->storage)->toBe([(string) $before]);
 });
 
@@ -281,9 +282,9 @@ it('does not replay missed updates with an expired access token', function () {
     $controller = subscribe_controller($transport);
     $stream = new ThroughStreamStub();
     $transport->publish(new Update(['/foo'], new Message(data: 'missed')));
-    $closed = false;
-    $stream->on('close', function () use (&$closed) {
-        $closed = true;
+    $ended = false;
+    $stream->on('end', function () use (&$ended) {
+        $ended = true;
     });
     // Signature and expiration are not validated by with_token()
     $request = with_token(
@@ -296,7 +297,7 @@ it('does not replay missed updates with an expired access token', function () {
     run_loop();
 
     // Then
-    expect($closed)->toBeTrue()
+    expect($ended)->toBeTrue()
         ->and($stream->storage)->toBe([]);
 });
 
