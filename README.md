@@ -169,6 +169,14 @@ It's still prefectly usable as soon as :
 - You don't expect more than a few hundreds updates per second
 - Your application is served from a single server.
 
+Optional parameter you can pass in the DSN's query string:
+- `size` - number of updates kept in memory to replay them to subscribers reconnecting with a last event ID
+  (default `0`: no history, so missed updates are not replayed)
+
+```bash
+TRANSPORT_DSN="php://default?size=1000" ./bin/freddie
+```
+
 ### Redis transport
 
 On the other hand, you can launch the hub on **multiple ports** and/or **multiple servers** with a Redis transport
@@ -184,6 +192,10 @@ TRANSPORT_DSN="redis://127.0.0.1:6379" ./bin/freddie
 ```
 
 Optional parameters you can pass in the DSN's query string:
+- `size` - number of updates kept in Redis to replay them to subscribers reconnecting with a last event ID
+  (default `0`: no history, so missed updates are not replayed)
+- `trimInterval` - how often, in seconds, the history is trimmed down to `size` (default `0.0`: never, so it keeps
+  growing)
 - `pingInterval` - regularly ping Redis connection, which will help detect outages (default `2.0`)
 - `readTimeout` - max duration in seconds of a ping or publish request (default `0.0`: considered disabled)
 
@@ -248,6 +260,19 @@ reverse_proxy 127.0.0.1:8080
 example.com
 
 reverse_proxy 10.1.2.3:8080 10.1.2.3:8081 10.1.2.4:8080 10.1.2.4:8081
+```
+
+#### Surviving hub restarts
+
+`EventSource` clients reconnect after a connection loss, but give up for good on a `502`. To make them wait for the hub
+while it restarts, let the proxy retry instead of failing right away:
+
+```caddy
+example.com
+
+reverse_proxy 127.0.0.1:8080 {
+    lb_try_duration 30s
+}
 ```
 
 ### Payload limitations
