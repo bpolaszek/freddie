@@ -9,7 +9,10 @@ use Psr\Http\Message\ServerRequestInterface;
 
 interface HubControllerInterface
 {
-    public function getMethod(): string;
+    /**
+     * @return string[]
+     */
+    public function getMethods(): array;
     public function getRoute(): string;
     public function setHub(HubInterface $hub): self;
     public function __invoke(ServerRequestInterface $request): ResponseInterface;

@@ -9,6 +9,7 @@ use Lcobucci\JWT\Configuration;
 use Lcobucci\JWT\Signer;
 
 use function is_readable;
+use function str_contains;
 
 final readonly class ConfigurationFactory
 {
@@ -43,10 +44,14 @@ final readonly class ConfigurationFactory
      */
     private function createSymmetricConfiguration(string $algorithm, string $secretKey): Configuration
     {
-        return Configuration::forSymmetricSigner(
-            $this->getSigner($algorithm),
-            $this->getKey($secretKey),
-        );
+        $key = $this->getKey($secretKey);
+
+        // Prevents algorithm confusion: a public key must never be usable as an HMAC secret.
+        if (str_contains($key->contents(), '-----BEGIN')) {
+            throw new InvalidArgumentException('A PEM key cannot be used with an HMAC algorithm.');
+        }
+
+        return Configuration::forSymmetricSigner($this->getSigner($algorithm), $key);
     }
 
     /**

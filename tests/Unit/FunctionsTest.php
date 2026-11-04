@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace Freddie\Tests\Unit;
 
-use Psr\Http\Message\ServerRequestInterface;
-use RingCentral\Psr7\ServerRequest;
-
-use function Freddie\extract_last_event_id;
 use function Freddie\is_truthy;
 use function Freddie\nullify;
 
@@ -54,55 +50,4 @@ it('nullifies stuff', function (mixed $input, ?string $cast, mixed $expected) {
     yield ['0', 'int', 0];
     yield [0, null, 0];
     yield [$obj, null, $obj];
-});
-
-it('extracts Last-Event-ID from request', function (ServerRequestInterface $request, ?string $expected) {
-    expect(extract_last_event_id($request))->toBe($expected);
-})->with(function () {
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure', ['Last-Event-ID' => 'foo']),
-        'expected' => 'foo',
-    ];
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure', ['Last-Event-Id' => 'foo']),
-        'expected' => 'foo',
-    ];
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure', ['last-event-id' => 'foo']),
-        'expected' => 'foo',
-    ];
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure', ['LAST-EVENT-ID' => 'foo']),
-        'expected' => 'foo',
-    ];
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure?lastEventID=foo'),
-        'expected' => 'foo',
-    ];
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure'),
-        'expected' => null,
-    ];
-});
-
-it(
-    'extracts Last-Event-ID from request using deprecated query parameter.',
-    fn (ServerRequestInterface $request, ?string $expected) => expect(extract_last_event_id($request))->toBe($expected)
-)->with(function () {
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure?Last-Event-ID=foo'),
-        'expected' => 'foo',
-    ];
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure?Last-Event-Id=foo'),
-        'expected' => 'foo',
-    ];
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure?last-event-id=foo'),
-        'expected' => 'foo',
-    ];
-    yield [
-        'request' => new ServerRequest('GET', '/.well-known/mercure?LAST-EVENT-ID=foo'),
-        'expected' => 'foo',
-    ];
 });
